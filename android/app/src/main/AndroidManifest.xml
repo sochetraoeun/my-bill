@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="my_bill"
+        android:label="My Bill"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
