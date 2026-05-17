@@ -1,0 +1,151 @@
+{
+  "@@locale": "en",
+  "appTitle": "My Bill",
+  "tabDashboard": "Dashboard",
+  "tabRooms": "Rooms",
+  "tabHistory": "History",
+  "tabSettings": "Settings",
+  "fabInputUsage": "New Usage",
+
+  "dashboardTitle": "Dashboard",
+  "statTotalBilled": "Total Billed",
+  "statThisMonth": "This Month",
+  "statTotalKwh": "Electricity",
+  "statTotalM3": "Water",
+  "statRoomsReported": "Rooms Reported",
+  "statRoomsValue": "{reported}/{total}",
+  "@statRoomsValue": {
+    "placeholders": {
+      "reported": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "perRoomSummary": "Per-Room Summary",
+  "monthlyTrend": "6-Month Trend",
+  "noData": "No data yet. Tap + to add a reading.",
+
+  "roomsTitle": "Rooms",
+  "roomLabel": "Room {n}",
+  "@roomLabel": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "roomDetailTitle": "Room Detail",
+  "roomHistory": "History",
+  "exportPdf": "Export PDF",
+  "exportExcel": "Export Excel",
+
+  "inputUsageTitle": "Input Usage",
+  "fieldRoom": "Room",
+  "fieldMonth": "Month",
+  "sectionElectricity": "Electricity",
+  "sectionWater": "Water",
+  "fieldPrevMeter": "Previous meter",
+  "fieldCurrMeter": "Current meter",
+  "previewBill": "Bill Preview",
+  "labelUsage": "Usage",
+  "labelRate": "Rate",
+  "labelAmount": "Amount",
+  "labelTotal": "Total",
+  "save": "Save",
+  "cancel": "Cancel",
+  "saved": "Saved.",
+  "savedCloud": "Saved to cloud.",
+  "savedLocal": "Saved on device.",
+  "saveFailed": "Save failed: {error}",
+  "@saveFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "saving": "Saving…",
+  "formInvalid": "Please fix the highlighted errors.",
+  "roomNameEmpty": "Room name cannot be empty.",
+  "roomNameDuplicate": "Another room already uses that name. Choose a different name.",
+  "invalidNumber": "Please enter a valid number.",
+  "filtersUpdated": "Filters updated.",
+  "filtersCleared": "Filters cleared.",
+  "actionCancelled": "Action cancelled.",
+  "badgeCloud": "Cloud",
+  "badgeLocal": "Local",
+  "updateExisting": "A reading already exists for this room and month. Saving will update it.",
+  "errorCurrLessThanPrev": "Current meter must be greater than or equal to previous.",
+
+  "historyTitle": "History",
+  "filterAllRooms": "All rooms",
+  "filterAllMonths": "All months",
+  "emptyHistory": "No readings yet.",
+
+  "settingsTitle": "Settings",
+  "settingsRates": "Tariff",
+  "settingsRateElec": "Electricity rate (KHR / kWh)",
+  "settingsRateWater": "Water rate (KHR / m³)",
+  "settingsFx": "Exchange rate (KHR / USD)",
+  "settingsLanguage": "Language",
+  "settingsLangEn": "English",
+  "settingsLangKm": "Khmer",
+  "settingsAppearance": "Appearance",
+  "settingsTheme": "Theme",
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "themeSystemDescription": "Match device theme",
+  "themeLightDescription": "Always use light theme",
+  "themeDarkDescription": "Always use dark theme",
+  "dashboardGreeting": "Hello there",
+  "dashboardSubtitle": "Here is your monthly overview",
+  "viewAll": "View all",
+  "billPreviewTitle": "Bill Preview",
+  "delete": "Delete",
+  "edit": "Edit",
+  "settingsAppVersion": "App version",
+  "deleteReadingTitle": "Delete reading?",
+  "deleteReadingMessage": "This action cannot be undone.",
+  "deleteRoomData": "Delete room data",
+  "deleteRoomDataTitle": "Delete all data for {room}?",
+  "@deleteRoomDataTitle": {
+    "placeholders": { "room": { "type": "String" } }
+  },
+  "deleteRoomDataMessage": "All readings for this room will be removed. This cannot be undone.",
+  "deletedRoomData": "Deleted all readings for {room}.",
+  "@deletedRoomData": {
+    "placeholders": { "room": { "type": "String" } }
+  },
+  "deleteRoomDataEmpty": "No readings to delete for this room.",
+  "deletedReading": "Reading deleted.",
+  "deletedAllData": "All readings deleted.",
+  "deleteFailed": "Delete failed: {error}",
+  "@deleteFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "exportedPdf": "PDF ready to share.",
+  "exportedExcel": "Excel ready to share.",
+  "exportFailed": "Export failed: {error}",
+  "@exportFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "roomRenamed": "Room renamed to {name}.",
+  "@roomRenamed": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "ratesUpdated": "Rates updated.",
+  "themeChanged": "Theme updated.",
+  "languageChanged": "Language updated.",
+  "settingsRoomNames": "Room names",
+  "addRoom": "Add room",
+  "deleteRoom": "Remove room",
+  "deleteRoomTitle": "Remove {room}?",
+  "@deleteRoomTitle": {
+    "placeholders": { "room": { "type": "String" } }
+  },
+  "deleteRoomMessage": "This room will be removed from the list and all readings for it will be deleted. This cannot be undone.",
+  "cannotDeleteLastRoom": "You need at least one room.",
+  "roomAdded": "Room added.",
+  "roomRemoved": "Room removed.",
+  "settingsAbout": "About",
+  "settingsResetData": "Reset all data",
+  "settingsResetConfirm": "Delete every reading? This cannot be undone.",
+  "confirm": "Confirm",
+
+  "unitKwh": "kWh",
+  "unitM3": "m³",
+  "currencyKhr": "៛",
+  "currencyUsd": "$"
+}

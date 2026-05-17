@@ -1,0 +1,47 @@
+rules_version = '2';
+
+// my_bill has no authentication by design. These rules expose only the
+// two collections the app actually uses (`readings` and `settings`) and
+// keep everything else locked down. Anyone who learns the project id can
+// still read/write those two collections, so:
+//
+//   * Do NOT store anything sensitive here.
+//   * Before going public, layer App Check on top, or add Firebase Auth
+//     and switch these to `request.auth != null`.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Bill readings: one doc per (room, year-month).
+    match /readings/{docId} {
+      allow read: if true;
+      allow create, update: if isValidReading(request.resource.data);
+      allow delete: if true;
+    }
+
+    // App settings mirror (tariff, FX, locale, room names).
+    match /settings/{docId} {
+      allow read, write: if true;
+    }
+
+    // Deny anything else by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+function isValidReading(d) {
+  return d.keys().hasAll([
+           'roomId', 'yearMonth', 'month',
+           'prevElec', 'currElec', 'prevWater', 'currWater', 'createdAt',
+         ])
+         && d.roomId is string && d.roomId.size() <= 64
+         && d.yearMonth is string
+         && d.yearMonth.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
+         && d.prevElec is number && d.prevElec >= 0
+         && d.currElec is number && d.currElec >= 0 && d.currElec >= d.prevElec
+         && d.prevWater is number && d.prevWater >= 0
+         && d.currWater is number && d.currWater >= 0 && d.currWater >= d.prevWater
+         && d.month is timestamp
+         && d.createdAt is timestamp;
+}
