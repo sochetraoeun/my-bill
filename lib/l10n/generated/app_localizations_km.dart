@@ -177,6 +177,51 @@ class AppLocalizationsKm extends AppLocalizations {
       'ម៉ែត្របច្ចុប្បន្នត្រូវធំជាងឬស្មើនឹងម៉ែត្រលើកមុន។';
 
   @override
+  String get meterChainWarningTitle => 'លេខម៉ែត្រមិនត្រូវគ្នានឹងខែជិតខាង';
+
+  @override
+  String get meterChainWarningIntro => 'ទិន្នន័យខែជិតខាងមានតម្លៃផ្សេងគ្នា៖';
+
+  @override
+  String get meterChainSaveAnyway => 'រក្សាទុកម្តងទៀត';
+
+  @override
+  String meterChainPredElectricity(
+    String neighborMonth,
+    String expected,
+    String got,
+  ) {
+    return 'អគ្គិសនី — ម៉ែត្រលើកមុនគឺ $got ប៉ុន្តែខែ $neighborMonthបញ្ចប់នៅ $expected។';
+  }
+
+  @override
+  String meterChainPredWater(
+    String neighborMonth,
+    String expected,
+    String got,
+  ) {
+    return 'ទឹក — ម៉ែត្រលើកមុនគឺ $got ប៉ុន្តែខែ $neighborMonthបញ្ចប់នៅ $expected។';
+  }
+
+  @override
+  String meterChainSuccElectricity(
+    String neighborMonth,
+    String expected,
+    String got,
+  ) {
+    return 'អគ្គិសនី — ម៉ែត្របច្ចុប្បន្នគឺ $got ប៉ុន្តែខែ $neighborMonthចាប់ផ្តើមនៅ $expected។';
+  }
+
+  @override
+  String meterChainSuccWater(
+    String neighborMonth,
+    String expected,
+    String got,
+  ) {
+    return 'ទឹក — ម៉ែត្របច្ចុប្បន្នគឺ $got ប៉ុន្តែខែ $neighborMonthចាប់ផ្តើមនៅ $expected។';
+  }
+
+  @override
   String get historyTitle => 'ប្រវត្តិ';
 
   @override

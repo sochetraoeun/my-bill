@@ -416,6 +416,56 @@ abstract class AppLocalizations {
   /// **'Current meter must be greater than or equal to previous.'**
   String get errorCurrLessThanPrev;
 
+  /// No description provided for @meterChainWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Meters don\'t match nearby months'**
+  String get meterChainWarningTitle;
+
+  /// No description provided for @meterChainWarningIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Neighboring readings use different values:'**
+  String get meterChainWarningIntro;
+
+  /// No description provided for @meterChainSaveAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Save anyway'**
+  String get meterChainSaveAnyway;
+
+  /// No description provided for @meterChainPredElectricity.
+  ///
+  /// In en, this message translates to:
+  /// **'Electricity — ‘Previous’ is {got}, but {neighborMonth} ends at {expected}.'**
+  String meterChainPredElectricity(
+    String neighborMonth,
+    String expected,
+    String got,
+  );
+
+  /// No description provided for @meterChainPredWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Water — ‘Previous’ is {got}, but {neighborMonth} ends at {expected}.'**
+  String meterChainPredWater(String neighborMonth, String expected, String got);
+
+  /// No description provided for @meterChainSuccElectricity.
+  ///
+  /// In en, this message translates to:
+  /// **'Electricity — ‘Current’ is {got}, but {neighborMonth} opens at {expected}.'**
+  String meterChainSuccElectricity(
+    String neighborMonth,
+    String expected,
+    String got,
+  );
+
+  /// No description provided for @meterChainSuccWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Water — ‘Current’ is {got}, but {neighborMonth} opens at {expected}.'**
+  String meterChainSuccWater(String neighborMonth, String expected, String got);
+
   /// No description provided for @historyTitle.
   ///
   /// In en, this message translates to:

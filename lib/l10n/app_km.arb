@@ -62,6 +62,41 @@
   "badgeLocal": "ក្នុងឧបករណ៍",
   "updateExisting": "មានទិន្នន័យសម្រាប់បន្ទប់នេះក្នុងខែនេះរួចហើយ។ ការរក្សាទុកនឹងធ្វើបច្ចុប្បន្នភាពវា។",
   "errorCurrLessThanPrev": "ម៉ែត្របច្ចុប្បន្នត្រូវធំជាងឬស្មើនឹងម៉ែត្រលើកមុន។",
+  "meterChainWarningTitle": "លេខម៉ែត្រមិនត្រូវគ្នានឹងខែជិតខាង",
+  "meterChainWarningIntro": "ទិន្នន័យខែជិតខាងមានតម្លៃផ្សេងគ្នា៖",
+  "meterChainSaveAnyway": "រក្សាទុកម្តងទៀត",
+  "meterChainPredElectricity": "អគ្គិសនី — ម៉ែត្រលើកមុនគឺ {got} ប៉ុន្តែខែ {neighborMonth}បញ្ចប់នៅ {expected}។",
+  "@meterChainPredElectricity": {
+    "placeholders": {
+      "neighborMonth": { "type": "String" },
+      "expected": { "type": "String" },
+      "got": { "type": "String" }
+    }
+  },
+  "meterChainPredWater": "ទឹក — ម៉ែត្រលើកមុនគឺ {got} ប៉ុន្តែខែ {neighborMonth}បញ្ចប់នៅ {expected}។",
+  "@meterChainPredWater": {
+    "placeholders": {
+      "neighborMonth": { "type": "String" },
+      "expected": { "type": "String" },
+      "got": { "type": "String" }
+    }
+  },
+  "meterChainSuccElectricity": "អគ្គិសនី — ម៉ែត្របច្ចុប្បន្នគឺ {got} ប៉ុន្តែខែ {neighborMonth}ចាប់ផ្តើមនៅ {expected}។",
+  "@meterChainSuccElectricity": {
+    "placeholders": {
+      "neighborMonth": { "type": "String" },
+      "expected": { "type": "String" },
+      "got": { "type": "String" }
+    }
+  },
+  "meterChainSuccWater": "ទឹក — ម៉ែត្របច្ចុប្បន្នគឺ {got} ប៉ុន្តែខែ {neighborMonth}ចាប់ផ្តើមនៅ {expected}។",
+  "@meterChainSuccWater": {
+    "placeholders": {
+      "neighborMonth": { "type": "String" },
+      "expected": { "type": "String" },
+      "got": { "type": "String" }
+    }
+  },
 
   "historyTitle": "ប្រវត្តិ",
   "filterAllRooms": "បន្ទប់ទាំងអស់",

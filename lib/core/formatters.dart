@@ -26,3 +26,10 @@ DateTime parseYearMonthKey(String key) {
   final parts = key.split('-');
   return DateTime(int.parse(parts[0]), int.parse(parts[1]));
 }
+
+/// Display form for readings / meter inputs (matches input form trimming).
+String formatMeterInputText(double v) =>
+    v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toString();
+
+/// Whether two meters from storage are the same reading (rounding noise).
+bool metersRoughlyEqual(double a, double b) => (a - b).abs() < 1e-9;

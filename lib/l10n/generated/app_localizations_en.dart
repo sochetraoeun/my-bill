@@ -177,6 +177,52 @@ class AppLocalizationsEn extends AppLocalizations {
       'Current meter must be greater than or equal to previous.';
 
   @override
+  String get meterChainWarningTitle => 'Meters don\'t match nearby months';
+
+  @override
+  String get meterChainWarningIntro =>
+      'Neighboring readings use different values:';
+
+  @override
+  String get meterChainSaveAnyway => 'Save anyway';
+
+  @override
+  String meterChainPredElectricity(
+    String neighborMonth,
+    String expected,
+    String got,
+  ) {
+    return 'Electricity — ‘Previous’ is $got, but $neighborMonth ends at $expected.';
+  }
+
+  @override
+  String meterChainPredWater(
+    String neighborMonth,
+    String expected,
+    String got,
+  ) {
+    return 'Water — ‘Previous’ is $got, but $neighborMonth ends at $expected.';
+  }
+
+  @override
+  String meterChainSuccElectricity(
+    String neighborMonth,
+    String expected,
+    String got,
+  ) {
+    return 'Electricity — ‘Current’ is $got, but $neighborMonth opens at $expected.';
+  }
+
+  @override
+  String meterChainSuccWater(
+    String neighborMonth,
+    String expected,
+    String got,
+  ) {
+    return 'Water — ‘Current’ is $got, but $neighborMonth opens at $expected.';
+  }
+
+  @override
   String get historyTitle => 'History';
 
   @override

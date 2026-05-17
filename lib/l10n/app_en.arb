@@ -68,6 +68,41 @@
   "badgeLocal": "Local",
   "updateExisting": "A reading already exists for this room and month. Saving will update it.",
   "errorCurrLessThanPrev": "Current meter must be greater than or equal to previous.",
+  "meterChainWarningTitle": "Meters don't match nearby months",
+  "meterChainWarningIntro": "Neighboring readings use different values:",
+  "meterChainSaveAnyway": "Save anyway",
+  "meterChainPredElectricity": "Electricity — ‘Previous’ is {got}, but {neighborMonth} ends at {expected}.",
+  "@meterChainPredElectricity": {
+    "placeholders": {
+      "neighborMonth": { "type": "String" },
+      "expected": { "type": "String" },
+      "got": { "type": "String" }
+    }
+  },
+  "meterChainPredWater": "Water — ‘Previous’ is {got}, but {neighborMonth} ends at {expected}.",
+  "@meterChainPredWater": {
+    "placeholders": {
+      "neighborMonth": { "type": "String" },
+      "expected": { "type": "String" },
+      "got": { "type": "String" }
+    }
+  },
+  "meterChainSuccElectricity": "Electricity — ‘Current’ is {got}, but {neighborMonth} opens at {expected}.",
+  "@meterChainSuccElectricity": {
+    "placeholders": {
+      "neighborMonth": { "type": "String" },
+      "expected": { "type": "String" },
+      "got": { "type": "String" }
+    }
+  },
+  "meterChainSuccWater": "Water — ‘Current’ is {got}, but {neighborMonth} opens at {expected}.",
+  "@meterChainSuccWater": {
+    "placeholders": {
+      "neighborMonth": { "type": "String" },
+      "expected": { "type": "String" },
+      "got": { "type": "String" }
+    }
+  },
 
   "historyTitle": "History",
   "filterAllRooms": "All rooms",

@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../../controllers/readings_controller.dart';
 import '../../controllers/settings_controller.dart';
 import '../../core/formatters.dart';
+import '../../core/meter_chain.dart';
 import '../../core/snack.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -44,15 +45,15 @@ class _InputUsagePageState extends State<InputUsagePage> {
     if (e != null) {
       _roomId = e.roomId;
       _month = DateTime(e.month.year, e.month.month);
-      _prevElec.text = _trim(e.prevElec);
-      _currElec.text = _trim(e.currElec);
-      _prevWater.text = _trim(e.prevWater);
-      _currWater.text = _trim(e.currWater);
+      _prevElec.text = formatMeterInputText(e.prevElec);
+      _currElec.text = formatMeterInputText(e.currElec);
+      _prevWater.text = formatMeterInputText(e.prevWater);
+      _currWater.text = formatMeterInputText(e.currWater);
     } else {
       _roomId = settings.settings.rooms.first.id;
       final now = DateTime.now();
       _month = DateTime(now.year, now.month);
-      _prefillPrevFromHistory(readings, _roomId, _month);
+      _prefillAdjacentFromHistory(readings, _roomId, _month);
     }
     for (final c in [_prevElec, _currElec, _prevWater, _currWater]) {
       c.addListener(() => setState(() {}));
@@ -68,9 +69,6 @@ class _InputUsagePageState extends State<InputUsagePage> {
     super.dispose();
   }
 
-  static String _trim(double v) =>
-      v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toString();
-
   double _read(TextEditingController c) =>
       double.tryParse(c.text.trim().replaceAll(',', '')) ?? 0;
 
@@ -81,25 +79,35 @@ class _InputUsagePageState extends State<InputUsagePage> {
   String _docId(String roomId, DateTime month) =>
       '${roomId}_${formatYearMonthKey(month)}';
 
-  /// Pre-fill the "previous" meters from the most recent prior reading for
-  /// the chosen room.
-  void _prefillPrevFromHistory(
+  /// Pre-fill meter fields using the nearest readings before / after [month].
+  /// When backfilling (e.g. April after May exists), prefills closing meters
+  /// from the next month's opening readings (current = successor's previous).
+  void _prefillAdjacentFromHistory(
     ReadingsController readings,
     String roomId,
     DateTime month,
   ) {
-    final candidates = readings.readings
-        .where((r) => r.roomId == roomId && r.month.isBefore(month))
-        .toList()
-      ..sort((a, b) => b.month.compareTo(a.month));
-    if (candidates.isEmpty) {
+    final omitEditing = widget.editing == null ? <String>{} : {widget.editing!.id};
+    final pred =
+        predecessorReading(readings.readings, roomId, month, omitEditing);
+    if (pred == null) {
       _prevElec.text = '';
       _prevWater.text = '';
-      return;
+    } else {
+      _prevElec.text = formatMeterInputText(pred.currElec);
+      _prevWater.text = formatMeterInputText(pred.currWater);
     }
-    final prev = candidates.first;
-    _prevElec.text = _trim(prev.currElec);
-    _prevWater.text = _trim(prev.currWater);
+
+    final succ =
+        successorReading(readings.readings, roomId, month, omitEditing);
+    if (succ != null) {
+      if (_currElec.text.trim().isEmpty) {
+        _currElec.text = formatMeterInputText(succ.prevElec);
+      }
+      if (_currWater.text.trim().isEmpty) {
+        _currWater.text = formatMeterInputText(succ.prevWater);
+      }
+    }
   }
 
   Future<void> _onSave() async {
@@ -114,24 +122,44 @@ class _InputUsagePageState extends State<InputUsagePage> {
     final readings = Get.find<ReadingsController>();
     final navigator = Navigator.of(context);
     final newId = _docId(_roomId, _month);
+    final editing = widget.editing;
+
+    final readingDraft = Reading(
+      id: newId,
+      roomId: _roomId,
+      month: _month,
+      prevElec: _read(_prevElec),
+      currElec: _read(_currElec),
+      prevWater: _read(_prevWater),
+      currWater: _read(_currWater),
+      createdAt: editing?.createdAt ?? DateTime.now(),
+    );
+
+    final excludeNeighbors = <String>{
+      newId,
+      if (editing != null) editing.id,
+    };
+    final chainIssues = mismatchesWithNeighbors(
+      readings.readings,
+      readingDraft,
+      excludeNeighbors,
+    );
+    if (chainIssues.isNotEmpty) {
+      final settings = Get.find<SettingsController>();
+      final proceed = await _confirmMeterChainMismatches(
+        t,
+        settings.settings.localeCode,
+        chainIssues,
+      );
+      if (!proceed || !mounted) return;
+    }
 
     setState(() => _saving = true);
     try {
-      final editing = widget.editing;
       if (editing != null && editing.id != newId) {
         await readings.delete(editing.id);
       }
-      final reading = Reading(
-        id: newId,
-        roomId: _roomId,
-        month: _month,
-        prevElec: _read(_prevElec),
-        currElec: _read(_currElec),
-        prevWater: _read(_prevWater),
-        currWater: _read(_currWater),
-        createdAt: editing?.createdAt ?? DateTime.now(),
-      );
-      await readings.upsert(reading);
+      await readings.upsert(readingDraft);
       navigator.pop();
       final rootContext = Get.context;
       if (rootContext != null) {
@@ -150,6 +178,52 @@ class _InputUsagePageState extends State<InputUsagePage> {
       setState(() => _saving = false);
       AppSnack.error(context, t.saveFailed(e.toString()));
     }
+  }
+
+  Future<bool> _confirmMeterChainMismatches(
+    AppLocalizations t,
+    String locale,
+    List<MeterNeighborMismatch> issues,
+  ) async {
+    final details = issues.map((m) => _meterChainLine(t, locale, m)).join('\n');
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(t.meterChainWarningTitle),
+        content: SingleChildScrollView(
+          child: Text('${t.meterChainWarningIntro}\n\n$details'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(t.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(t.meterChainSaveAnyway),
+          ),
+        ],
+      ),
+    );
+    return result == true;
+  }
+
+  String _meterChainLine(
+    AppLocalizations t,
+    String locale,
+    MeterNeighborMismatch m,
+  ) {
+    final neighborMonth = formatYearMonthHuman(m.neighborMonth, locale);
+    final expected = formatMeterInputText(m.expected);
+    final got = formatMeterInputText(m.got);
+    if (m.isPredecessor) {
+      return m.isElectricity
+          ? t.meterChainPredElectricity(neighborMonth, expected, got)
+          : t.meterChainPredWater(neighborMonth, expected, got);
+    }
+    return m.isElectricity
+        ? t.meterChainSuccElectricity(neighborMonth, expected, got)
+        : t.meterChainSuccWater(neighborMonth, expected, got);
   }
 
   @override
@@ -210,7 +284,9 @@ class _InputUsagePageState extends State<InputUsagePage> {
                         setState(() {
                           _roomId = r.id;
                           if (widget.editing == null) {
-                            _prefillPrevFromHistory(readings, r.id, _month);
+                            _currElec.clear();
+                            _currWater.clear();
+                            _prefillAdjacentFromHistory(readings, r.id, _month);
                           }
                         });
                       },
@@ -237,7 +313,9 @@ class _InputUsagePageState extends State<InputUsagePage> {
                     setState(() {
                       _month = DateTime(picked.year, picked.month);
                       if (widget.editing == null) {
-                        _prefillPrevFromHistory(readings, _roomId, _month);
+                        _currElec.clear();
+                        _currWater.clear();
+                        _prefillAdjacentFromHistory(readings, _roomId, _month);
                       }
                     });
                   }
