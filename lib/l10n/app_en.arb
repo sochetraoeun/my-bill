@@ -32,6 +32,7 @@
   "roomDetailTitle": "Room Detail",
   "roomHistory": "History",
   "exportPdf": "Export PDF",
+  "reorderReadingsHint": "Drag to reorder",
   "exportExcel": "Export Excel",
 
   "inputUsageTitle": "Input Usage",

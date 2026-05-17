@@ -76,6 +76,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportPdf => 'Export PDF';
 
   @override
+  String get reorderReadingsHint => 'Drag to reorder';
+
+  @override
   String get exportExcel => 'Export Excel';
 
   @override

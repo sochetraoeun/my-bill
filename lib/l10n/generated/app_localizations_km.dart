@@ -76,6 +76,9 @@ class AppLocalizationsKm extends AppLocalizations {
   String get exportPdf => 'នាំចេញ PDF';
 
   @override
+  String get reorderReadingsHint => 'អូសដើម្បីតម្រៀប';
+
+  @override
   String get exportExcel => 'នាំចេញ Excel';
 
   @override

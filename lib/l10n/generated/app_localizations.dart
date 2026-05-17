@@ -224,6 +224,12 @@ abstract class AppLocalizations {
   /// **'Export PDF'**
   String get exportPdf;
 
+  /// No description provided for @reorderReadingsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to reorder'**
+  String get reorderReadingsHint;
+
   /// No description provided for @exportExcel.
   ///
   /// In en, this message translates to:

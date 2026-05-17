@@ -23,4 +23,6 @@ class Defaults {
 class StorageKeys {
   static const String settings = 'mybill.settings.v1';
   static const String localReadings = 'mybill.readings.v1';
+  /// JSON map: roomId → ordered list of reading ids (custom list order in room detail).
+  static const String roomReadingOrder = 'mybill.room_reading_order.v1';
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -44,12 +46,12 @@ class RoomDetailPage extends StatelessWidget {
         ],
       ),
       body: Obx(() {
-        final list = readings.forRoom(roomId);
+        final list = readings.orderedForRoom(roomId);
         final locale = settings.settings.localeCode;
         if (list.isEmpty) {
           return _EmptyMessage(message: t.noData);
         }
-        return ListView.separated(
+        return ReorderableListView.builder(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.lg,
             AppSpacing.sm,
@@ -57,18 +59,39 @@ class RoomDetailPage extends StatelessWidget {
             96,
           ),
           itemCount: list.length,
-          separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
+          onReorder: (oldIndex, newIndex) {
+            var ni = newIndex;
+            if (ni > oldIndex) ni--;
+            final next = List<Reading>.from(list);
+            final moved = next.removeAt(oldIndex);
+            next.insert(ni, moved);
+            unawaited(
+              readings.setRoomReadingOrder(
+                roomId,
+                next.map((e) => e.id).toList(),
+              ),
+            );
+          },
           itemBuilder: (context, i) {
             final r = list[i];
             final b = computeBill(r, settings.settings);
-            return _ReadingTile(
-              monthLabel: formatYearMonthHuman(r.month, locale),
-              elec: formatKwh(b.elecUsageKwh),
-              water: formatM3(b.waterUsageM3),
-              totalKhr: formatKhr(b.totalKhr),
-              totalUsd: formatUsd(b.totalUsd),
-              onTap: () => Get.to(() => InputUsagePage(editing: r)),
-              onLongPress: () => _confirmDelete(context, r),
+            return Padding(
+              key: ValueKey(r.id),
+              padding: EdgeInsets.only(
+                bottom: i < list.length - 1 ? AppSpacing.md : 0,
+              ),
+              child: _ReadingTile(
+                monthLabel: formatYearMonthHuman(r.month, locale),
+                elec: formatKwh(b.elecUsageKwh),
+                water: formatM3(b.waterUsageM3),
+                totalKhr: formatKhr(b.totalKhr),
+                totalUsd: formatUsd(b.totalUsd),
+                reorderIndex: i,
+                reorderTooltip: t.reorderReadingsHint,
+                onTap: () => Get.to(() => InputUsagePage(editing: r)),
+                onDelete: () => _confirmDelete(context, r),
+                onLongPress: () => _confirmDelete(context, r),
+              ),
             );
           },
         );
@@ -191,7 +214,7 @@ class RoomDetailPage extends StatelessWidget {
     final t = AppLocalizations.of(context);
     final readings = Get.find<ReadingsController>();
     final settings = Get.find<SettingsController>();
-    final list = readings.forRoom(roomId);
+    final list = readings.orderedForRoom(roomId);
     if (list.isEmpty) {
       AppSnack.info(context, t.noData);
       return;
@@ -228,7 +251,10 @@ class _ReadingTile extends StatelessWidget {
     required this.water,
     required this.totalKhr,
     required this.totalUsd,
+    this.reorderIndex,
+    this.reorderTooltip,
     this.onTap,
+    this.onDelete,
     this.onLongPress,
   });
 
@@ -237,7 +263,10 @@ class _ReadingTile extends StatelessWidget {
   final String water;
   final String totalKhr;
   final String totalUsd;
+  final int? reorderIndex;
+  final String? reorderTooltip;
   final VoidCallback? onTap;
+  final VoidCallback? onDelete;
   final VoidCallback? onLongPress;
 
   @override
@@ -254,6 +283,31 @@ class _ReadingTile extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              if (reorderIndex != null) ...[
+                ReorderableDragStartListener(
+                  index: reorderIndex!,
+                  child: reorderTooltip != null && reorderTooltip!.isNotEmpty
+                      ? Tooltip(
+                          message: reorderTooltip!,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: AppSpacing.xs),
+                            child: Icon(
+                              Icons.drag_indicator_rounded,
+                              color: scheme.onSurfaceVariant,
+                              size: 28,
+                            ),
+                          ),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.only(right: AppSpacing.xs),
+                          child: Icon(
+                            Icons.drag_indicator_rounded,
+                            color: scheme.onSurfaceVariant,
+                            size: 28,
+                          ),
+                        ),
+                ),
+              ],
               Container(
                 width: 44,
                 height: 44,
@@ -327,6 +381,17 @@ class _ReadingTile extends StatelessWidget {
                   ),
                 ],
               ),
+              if (onDelete != null) ...[
+                const SizedBox(width: AppSpacing.xs),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  tooltip: AppLocalizations.of(context).delete,
+                  style: IconButton.styleFrom(
+                    foregroundColor: scheme.error,
+                  ),
+                  onPressed: onDelete,
+                ),
+              ],
             ],
           ),
         ),

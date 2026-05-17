@@ -12,6 +12,7 @@ import 'services/exchange_rate_service.dart';
 import 'services/firebase_bootstrap.dart';
 import 'services/firestore_readings_repository.dart';
 import 'services/readings_repository.dart';
+import 'services/room_reading_order_service.dart';
 import 'services/settings_service.dart';
 
 Future<void> main() async {
@@ -43,12 +44,19 @@ Future<void> main() async {
 
   final firebaseUp = await tryInitFirebase();
 
+  final roomReadingOrderService = RoomReadingOrderService(prefs);
+  Get.put<RoomReadingOrderService>(roomReadingOrderService);
+
   final ReadingsRepository readingsRepo = firebaseUp
       ? FirestoreReadingsRepository()
       : LocalReadingsRepository(prefs);
   Get.put<ReadingsRepository>(readingsRepo);
   Get.put<ReadingsController>(
-    ReadingsController(readingsRepo, isCloud: firebaseUp),
+    ReadingsController(
+      readingsRepo,
+      isCloud: firebaseUp,
+      roomOrderService: roomReadingOrderService,
+    ),
   );
 
   Get.put<DashboardController>(
