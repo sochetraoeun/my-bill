@@ -201,6 +201,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsFx => 'Exchange rate (KHR / USD)';
 
   @override
+  String get settingsFxOfficialTooltip => 'Official USD/KHR rate (MEF)';
+
+  @override
+  String get fxOfficialRateUpdated =>
+      'Exchange rate updated from Ministry of Economy and Finance (reference).';
+
+  @override
+  String fxOfficialRateFailed(String error) {
+    return 'Could not refresh official rate: $error';
+  }
+
+  @override
   String get settingsLanguage => 'Language';
 
   @override

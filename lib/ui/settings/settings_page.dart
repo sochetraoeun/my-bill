@@ -6,6 +6,7 @@ import '../../controllers/settings_controller.dart';
 import '../../core/snack.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../services/exchange_rate_service.dart';
 import '../widgets/bill_dialog.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -17,10 +18,7 @@ class SettingsPage extends StatelessWidget {
     final settings = Get.find<SettingsController>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(t.settingsTitle),
-        titleSpacing: AppSpacing.lg,
-      ),
+      appBar: AppBar(title: Text(t.settingsTitle), titleSpacing: AppSpacing.lg),
       body: Obx(() {
         final s = settings.rx.value;
         return ListView(
@@ -71,9 +69,7 @@ class SettingsPage extends StatelessWidget {
                   initialValue: s.elecRateKhrPerKwh,
                   label: t.settingsRateElec,
                   icon: Icons.bolt,
-                  iconColor: Theme.of(
-                    context,
-                  ).extension<BillColors>()!.elec,
+                  iconColor: Theme.of(context).extension<BillColors>()!.elec,
                   onChanged: (v) async {
                     if (v == s.elecRateKhrPerKwh) return;
                     await settings.updateRates(elec: v);
@@ -86,9 +82,7 @@ class SettingsPage extends StatelessWidget {
                   initialValue: s.waterRateKhrPerM3,
                   label: t.settingsRateWater,
                   icon: Icons.water_drop,
-                  iconColor: Theme.of(
-                    context,
-                  ).extension<BillColors>()!.water,
+                  iconColor: Theme.of(context).extension<BillColors>()!.water,
                   onChanged: (v) async {
                     if (v == s.waterRateKhrPerM3) return;
                     await settings.updateRates(water: v);
@@ -98,6 +92,7 @@ class SettingsPage extends StatelessWidget {
                 ),
                 const _ThinDivider(),
                 _RateField(
+                  key: ValueKey<double>(s.khrPerUsd),
                   initialValue: s.khrPerUsd,
                   label: t.settingsFx,
                   icon: Icons.currency_exchange,
@@ -108,6 +103,7 @@ class SettingsPage extends StatelessWidget {
                     if (!context.mounted) return;
                     AppSnack.success(context, t.ratesUpdated);
                   },
+                  trailing: const _OfficialFxRefreshButton(),
                 ),
               ],
             ),
@@ -121,11 +117,8 @@ class SettingsPage extends StatelessWidget {
                   _RoomTile(
                     name: s.rooms[i].name,
                     canDelete: s.rooms.length > 1,
-                    onTap: () => _renameRoom(
-                      context,
-                      s.rooms[i].id,
-                      s.rooms[i].name,
-                    ),
+                    onTap: () =>
+                        _renameRoom(context, s.rooms[i].id, s.rooms[i].name),
                     onDelete: () => _confirmRemoveRoom(
                       context,
                       s.rooms[i].id,
@@ -281,11 +274,7 @@ class SettingsPage extends StatelessWidget {
     try {
       await Get.find<SettingsController>().addRoom(result);
       if (!context.mounted) return;
-      AppSnack.success(
-        context,
-        t.roomAdded,
-        icon: Icons.meeting_room_outlined,
-      );
+      AppSnack.success(context, t.roomAdded, icon: Icons.meeting_room_outlined);
     } on DuplicateRoomNameException {
       if (!context.mounted) return;
       AppSnack.error(context, t.roomNameDuplicate);
@@ -477,10 +466,7 @@ class _ThemeSelector extends StatelessWidget {
           ),
           child: Row(
             children: [
-              _LeadingIcon(
-                icon: Icons.palette_outlined,
-                color: scheme.primary,
-              ),
+              _LeadingIcon(icon: Icons.palette_outlined, color: scheme.primary),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
@@ -597,8 +583,14 @@ class _LanguageSelector extends StatelessWidget {
           ),
           child: SegmentedButton<String>(
             segments: [
-              ButtonSegment(value: 'en', label: _segmentSingleLineLabel(labelEn)),
-              ButtonSegment(value: 'km', label: _segmentSingleLineLabel(labelKm)),
+              ButtonSegment(
+                value: 'en',
+                label: _segmentSingleLineLabel(labelEn),
+              ),
+              ButtonSegment(
+                value: 'km',
+                label: _segmentSingleLineLabel(labelKm),
+              ),
             ],
             selected: {value},
             showSelectedIcon: false,
@@ -630,19 +622,62 @@ class _LeadingIcon extends StatelessWidget {
   }
 }
 
+class _OfficialFxRefreshButton extends StatelessWidget {
+  const _OfficialFxRefreshButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = Get.find<SettingsController>();
+    final t = AppLocalizations.of(context);
+    return Obx(() {
+      final busy = settings.fetchingOfficialFx.value;
+      return IconButton(
+        tooltip: t.settingsFxOfficialTooltip,
+        visualDensity: VisualDensity.compact,
+        onPressed: busy
+            ? null
+            : () async {
+                try {
+                  await settings.refreshOfficialKhrPerUsdRate();
+                  if (!context.mounted) return;
+                  AppSnack.success(context, t.fxOfficialRateUpdated);
+                } on ExchangeRateFetchException catch (e) {
+                  if (!context.mounted) return;
+                  AppSnack.error(context, t.fxOfficialRateFailed(e.toString()));
+                } catch (e) {
+                  if (!context.mounted) return;
+                  AppSnack.error(context, t.fxOfficialRateFailed('$e'));
+                }
+              },
+        icon: busy
+            ? SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator.adaptive(strokeWidth: 2),
+              )
+            : const Icon(Icons.sync_rounded),
+      );
+    });
+  }
+}
+
 class _RateField extends StatefulWidget {
   const _RateField({
+    super.key,
     required this.initialValue,
     required this.label,
     required this.icon,
     required this.iconColor,
     required this.onChanged,
+    this.trailing,
   });
+
   final double initialValue;
   final String label;
   final IconData icon;
   final Color iconColor;
   final Future<void> Function(double) onChanged;
+  final Widget? trailing;
 
   @override
   State<_RateField> createState() => _RateFieldState();
@@ -727,6 +762,7 @@ class _RateFieldState extends State<_RateField> {
             },
           ),
         ),
+        if (widget.trailing != null) widget.trailing!,
       ],
     ),
   );
@@ -765,40 +801,37 @@ class _RoomTile extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                    _LeadingIcon(
-                      icon: Icons.meeting_room_outlined,
-                      color: scheme.primary,
+                  _LeadingIcon(
+                    icon: Icons.meeting_room_outlined,
+                    color: scheme.primary,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      name,
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Text(
-                        name,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-                    Icon(
-                      Icons.edit_outlined,
-                      size: 18,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ],
-                ),
+                  ),
+                  Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ],
               ),
             ),
           ),
-          if (canDelete)
-            Padding(
-              padding: const EdgeInsets.only(right: AppSpacing.xs),
-              child: IconButton(
-                tooltip: t.deleteRoom,
-                onPressed: onDelete,
-                icon: Icon(
-                  Icons.delete_outline_rounded,
-                  color: scheme.error,
-                ),
-              ),
+        ),
+        if (canDelete)
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.xs),
+            child: IconButton(
+              tooltip: t.deleteRoom,
+              onPressed: onDelete,
+              icon: Icon(Icons.delete_outline_rounded, color: scheme.error),
             ),
-        ],
+          ),
+      ],
     );
   }
 }
@@ -838,9 +871,9 @@ class _AboutTile extends StatelessWidget {
             Expanded(
               child: Text(
                 title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: titleColor,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(color: titleColor),
               ),
             ),
             ?trailing,

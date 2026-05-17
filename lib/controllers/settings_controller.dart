@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../models/room.dart';
 import '../models/settings.dart';
+import '../services/exchange_rate_service.dart';
 import '../services/settings_service.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-
 
 /// Thrown when [SettingsController.renameRoom] would duplicate another room's name.
 class DuplicateRoomNameException implements Exception {
@@ -18,9 +18,12 @@ class CannotDeleteLastRoomException implements Exception {
 }
 
 class SettingsController extends GetxController {
-  SettingsController(this._service);
+  SettingsController(this._service, this._exchangeRates);
+
   RxString appVersion = ''.obs;
   final SettingsService _service;
+  final ExchangeRateService _exchangeRates;
+  final fetchingOfficialFx = false.obs;
   final Rx<AppSettings> _settings = AppSettings.defaults().obs;
 
   AppSettings get settings => _settings.value;
@@ -51,6 +54,18 @@ class SettingsController extends GetxController {
       khrPerUsd: khrPerUsd,
     );
     await _service.save(_settings.value);
+  }
+
+  /// Cambodia MEF official USD/KHR (KHR per 1 USD), saved as [AppSettings.khrPerUsd].
+  Future<void> refreshOfficialKhrPerUsdRate() async {
+    if (fetchingOfficialFx.value) return;
+    fetchingOfficialFx.value = true;
+    try {
+      final rate = await _exchangeRates.fetchOfficialKhrPerUsd();
+      await updateRates(khrPerUsd: rate);
+    } finally {
+      fetchingOfficialFx.value = false;
+    }
   }
 
   Future<void> setLocale(String code) async {
@@ -109,8 +124,9 @@ class SettingsController extends GetxController {
     if (_settings.value.rooms.length <= 1) {
       throw const CannotDeleteLastRoomException();
     }
-    final next =
-        _settings.value.rooms.where((r) => r.id != id).toList(growable: false);
+    final next = _settings.value.rooms
+        .where((r) => r.id != id)
+        .toList(growable: false);
     if (next.length == _settings.value.rooms.length) {
       return;
     }

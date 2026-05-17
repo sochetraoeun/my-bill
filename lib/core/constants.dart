@@ -6,8 +6,11 @@ import 'package:flutter/material.dart';
 const int kRoomCount = 6;
 
 /// Stable IDs for rooms so that data survives renames.
-List<String> get kRoomIds =>
-    List.generate(kRoomCount, (i) => 'room_${i + 1}');
+List<String> get kRoomIds => List.generate(kRoomCount, (i) => 'room_${i + 1}');
+
+/// Cambodia MEF official realtime USD/KHR API (KHR per USD).
+const String kDefaultExchangeRateApiUrl =
+    'https://data.mef.gov.kh/api/v1/realtime-api/exchange-rate';
 
 class Defaults {
   static const double elecRateKhrPerKwh = 800;

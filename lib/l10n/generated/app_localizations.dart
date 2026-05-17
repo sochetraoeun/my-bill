@@ -464,6 +464,24 @@ abstract class AppLocalizations {
   /// **'Exchange rate (KHR / USD)'**
   String get settingsFx;
 
+  /// No description provided for @settingsFxOfficialTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Official USD/KHR rate (MEF)'**
+  String get settingsFxOfficialTooltip;
+
+  /// No description provided for @fxOfficialRateUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange rate updated from Ministry of Economy and Finance (reference).'**
+  String get fxOfficialRateUpdated;
+
+  /// No description provided for @fxOfficialRateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not refresh official rate: {error}'**
+  String fxOfficialRateFailed(String error);
+
   /// No description provided for @settingsLanguage.
   ///
   /// In en, this message translates to:

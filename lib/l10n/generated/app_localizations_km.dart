@@ -201,6 +201,19 @@ class AppLocalizationsKm extends AppLocalizations {
   String get settingsFx => 'អត្រាប្តូរប្រាក់ (៛ / USD)';
 
   @override
+  String get settingsFxOfficialTooltip =>
+      'អត្រា USD ផ្លូវការ (សេនាធិការសេដ្ឋកិច្ជា)';
+
+  @override
+  String get fxOfficialRateUpdated =>
+      'បានធ្វើបច្ចុប្បន្នភាពអត្រាពីសេនាធិការសេដ្ឋកិច្ជារបស់រដ្ឋ (យោង)។';
+
+  @override
+  String fxOfficialRateFailed(String error) {
+    return 'មិនអាចធ្វើបច្ចុប្បន្នភាពអត្រាផ្លូវការបាន៖ $error';
+  }
+
+  @override
   String get settingsLanguage => 'ភាសា';
 
   @override

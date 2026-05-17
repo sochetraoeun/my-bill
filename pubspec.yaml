@@ -24,6 +24,8 @@ dependencies:
   share_plus: ^13.1.0
   path_provider: ^2.1.5
   package_info_plus: ^10.1.0
+  http: ^1.6.0
+  flutter_dotenv: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -36,6 +38,7 @@ flutter:
 
   assets:
     - assets/fonts/
+    - .env
 
   fonts:
     - family: NotoSansKhmer
