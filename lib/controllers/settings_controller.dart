@@ -1,7 +1,13 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../core/constants.dart';
 import '../models/room.dart';
 import '../models/settings.dart';
 import '../services/exchange_rate_service.dart';
@@ -23,8 +29,9 @@ class SettingsController extends GetxController {
   RxString appVersion = ''.obs;
   final SettingsService _service;
   final ExchangeRateService _exchangeRates;
-  final fetchingOfficialFx = false.obs;
   final Rx<AppSettings> _settings = AppSettings.defaults().obs;
+
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _firestoreFxSub;
 
   AppSettings get settings => _settings.value;
   Rx<AppSettings> get rx => _settings;
@@ -56,16 +63,42 @@ class SettingsController extends GetxController {
     await _service.save(_settings.value);
   }
 
-  /// Cambodia MEF official USD/KHR (KHR per 1 USD), saved as [AppSettings.khrPerUsd].
-  Future<void> refreshOfficialKhrPerUsdRate() async {
-    if (fetchingOfficialFx.value) return;
-    fetchingOfficialFx.value = true;
-    try {
-      final rate = await _exchangeRates.fetchOfficialKhrPerUsd();
-      await updateRates(khrPerUsd: rate);
-    } finally {
-      fetchingOfficialFx.value = false;
+  /// Subscribes to `settings/exchange_rate` (updated daily by CI). No-op if Firebase is off.
+  void listenToFirestoreExchangeRate() {
+    if (Firebase.apps.isEmpty) return;
+    _firestoreFxSub?.cancel();
+    final ref = FirebaseFirestore.instance
+        .collection(kFirestoreExchangeRateCollection)
+        .doc(kFirestoreExchangeRateDocId);
+    _firestoreFxSub = ref.snapshots().listen(
+      _onExchangeRateSnapshot,
+      onError: (Object e, StackTrace st) {
+        if (kDebugMode) {
+          debugPrint('Exchange rate Firestore stream error: $e');
+          debugPrintStack(stackTrace: st);
+        }
+      },
+    );
+  }
+
+  Future<void> _onExchangeRateSnapshot(
+    DocumentSnapshot<Map<String, dynamic>> snap,
+  ) async {
+    if (!snap.exists || snap.data() == null) return;
+    final rate = _exchangeRates.tryKhrPerUsdFromMap(snap.data()!);
+    if (rate == null) return;
+    if ((rate - _settings.value.khrPerUsd).abs() < 1e-6) return;
+    await updateRates(khrPerUsd: rate);
+  }
+
+  @override
+  void onClose() {
+    final sub = _firestoreFxSub;
+    _firestoreFxSub = null;
+    if (sub != null) {
+      unawaited(sub.cancel());
     }
+    super.onClose();
   }
 
   Future<void> setLocale(String code) async {

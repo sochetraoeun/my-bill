@@ -114,14 +114,7 @@
   "settingsRateElec": "Electricity rate (KHR / kWh)",
   "settingsRateWater": "Water rate (KHR / m³)",
   "settingsFx": "Exchange rate (KHR / USD)",
-  "settingsFxOfficialTooltip": "Official USD/KHR rate (MEF)",
-  "fxOfficialRateUpdated": "Exchange rate updated from Ministry of Economy and Finance (reference).",
-  "fxOfficialRateFailed": "Could not refresh official rate: {error}",
-  "@fxOfficialRateFailed": {
-    "placeholders": {
-      "error": { "type": "String" }
-    }
-  },
+  "settingsFxCloudHint": "Synced from the server when online (updated daily). You can still type an override.",
   "settingsLanguage": "Language",
   "settingsLangEn": "English",
   "settingsLangKm": "Khmer",

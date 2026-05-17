@@ -520,23 +520,11 @@ abstract class AppLocalizations {
   /// **'Exchange rate (KHR / USD)'**
   String get settingsFx;
 
-  /// No description provided for @settingsFxOfficialTooltip.
+  /// No description provided for @settingsFxCloudHint.
   ///
   /// In en, this message translates to:
-  /// **'Official USD/KHR rate (MEF)'**
-  String get settingsFxOfficialTooltip;
-
-  /// No description provided for @fxOfficialRateUpdated.
-  ///
-  /// In en, this message translates to:
-  /// **'Exchange rate updated from Ministry of Economy and Finance (reference).'**
-  String get fxOfficialRateUpdated;
-
-  /// No description provided for @fxOfficialRateFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not refresh official rate: {error}'**
-  String fxOfficialRateFailed(String error);
+  /// **'Synced from the server when online (updated daily). You can still type an override.'**
+  String get settingsFxCloudHint;
 
   /// No description provided for @settingsLanguage.
   ///

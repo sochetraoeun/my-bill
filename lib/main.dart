@@ -7,7 +7,6 @@ import 'app.dart';
 import 'controllers/dashboard_controller.dart';
 import 'controllers/readings_controller.dart';
 import 'controllers/settings_controller.dart';
-import 'core/constants.dart';
 import 'services/exchange_rate_service.dart';
 import 'services/firebase_bootstrap.dart';
 import 'services/firestore_readings_repository.dart';
@@ -21,7 +20,7 @@ Future<void> main() async {
   try {
     await dotenv.load(fileName: '.env');
   } catch (_) {
-    // Optional file; resolver falls back to [kDefaultExchangeRateApiUrl].
+    // Optional file for other keys; FX now comes from Firestore when Firebase is up.
   }
 
   final prefs = await SharedPreferences.getInstance();
@@ -29,20 +28,15 @@ Future<void> main() async {
   final settingsService = SettingsService(prefs);
   Get.put<SettingsService>(settingsService);
 
-  Get.put<ExchangeRateService>(
-    ExchangeRateService(() {
-      final fromEnv = dotenv.env['EXCHANGE_RATE_API_URL']?.trim();
-      if (fromEnv != null && fromEnv.isNotEmpty) {
-        return fromEnv;
-      }
-      return kDefaultExchangeRateApiUrl;
-    }),
-  );
+  Get.put<ExchangeRateService>(ExchangeRateService());
   Get.put<SettingsController>(
     SettingsController(settingsService, Get.find<ExchangeRateService>()),
   );
 
   final firebaseUp = await tryInitFirebase();
+  if (firebaseUp) {
+    Get.find<SettingsController>().listenToFirestoreExchangeRate();
+  }
 
   final roomReadingOrderService = RoomReadingOrderService(prefs);
   Get.put<RoomReadingOrderService>(roomReadingOrderService);

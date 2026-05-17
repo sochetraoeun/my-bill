@@ -6,7 +6,6 @@ import '../../controllers/settings_controller.dart';
 import '../../core/snack.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../services/exchange_rate_service.dart';
 import '../widgets/bill_dialog.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -95,6 +94,7 @@ class SettingsPage extends StatelessWidget {
                   key: ValueKey<double>(s.khrPerUsd),
                   initialValue: s.khrPerUsd,
                   label: t.settingsFx,
+                  helperText: t.settingsFxCloudHint,
                   icon: Icons.currency_exchange,
                   iconColor: Theme.of(context).colorScheme.primary,
                   onChanged: (v) async {
@@ -103,7 +103,6 @@ class SettingsPage extends StatelessWidget {
                     if (!context.mounted) return;
                     AppSnack.success(context, t.ratesUpdated);
                   },
-                  trailing: const _OfficialFxRefreshButton(),
                 ),
               ],
             ),
@@ -622,45 +621,6 @@ class _LeadingIcon extends StatelessWidget {
   }
 }
 
-class _OfficialFxRefreshButton extends StatelessWidget {
-  const _OfficialFxRefreshButton();
-
-  @override
-  Widget build(BuildContext context) {
-    final settings = Get.find<SettingsController>();
-    final t = AppLocalizations.of(context);
-    return Obx(() {
-      final busy = settings.fetchingOfficialFx.value;
-      return IconButton(
-        tooltip: t.settingsFxOfficialTooltip,
-        visualDensity: VisualDensity.compact,
-        onPressed: busy
-            ? null
-            : () async {
-                try {
-                  await settings.refreshOfficialKhrPerUsdRate();
-                  if (!context.mounted) return;
-                  AppSnack.success(context, t.fxOfficialRateUpdated);
-                } on ExchangeRateFetchException catch (e) {
-                  if (!context.mounted) return;
-                  AppSnack.error(context, t.fxOfficialRateFailed(e.toString()));
-                } catch (e) {
-                  if (!context.mounted) return;
-                  AppSnack.error(context, t.fxOfficialRateFailed('$e'));
-                }
-              },
-        icon: busy
-            ? SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator.adaptive(strokeWidth: 2),
-              )
-            : const Icon(Icons.sync_rounded),
-      );
-    });
-  }
-}
-
 class _RateField extends StatefulWidget {
   const _RateField({
     super.key,
@@ -669,15 +629,15 @@ class _RateField extends StatefulWidget {
     required this.icon,
     required this.iconColor,
     required this.onChanged,
-    this.trailing,
+    this.helperText,
   });
 
   final double initialValue;
   final String label;
+  final String? helperText;
   final IconData icon;
   final Color iconColor;
   final Future<void> Function(double) onChanged;
-  final Widget? trailing;
 
   @override
   State<_RateField> createState() => _RateFieldState();
@@ -685,10 +645,12 @@ class _RateField extends StatefulWidget {
 
 class _RateFieldState extends State<_RateField> {
   late final TextEditingController _ctrl;
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
+    _focusNode = FocusNode();
     _ctrl = TextEditingController(
       text: widget.initialValue == widget.initialValue.roundToDouble()
           ? widget.initialValue.toStringAsFixed(0)
@@ -699,13 +661,16 @@ class _RateFieldState extends State<_RateField> {
   @override
   void didUpdateWidget(covariant _RateField old) {
     super.didUpdateWidget(old);
-    if (old.initialValue != widget.initialValue && !_ctrl.text.contains('.')) {
-      _ctrl.text = widget.initialValue.toStringAsFixed(0);
-    }
+    if (old.initialValue == widget.initialValue) return;
+    if (_focusNode.hasFocus) return;
+    _ctrl.text = widget.initialValue == widget.initialValue.roundToDouble()
+        ? widget.initialValue.toStringAsFixed(0)
+        : widget.initialValue.toString();
   }
 
   @override
   void dispose() {
+    _focusNode.dispose();
     _ctrl.dispose();
     super.dispose();
   }
@@ -744,9 +709,11 @@ class _RateFieldState extends State<_RateField> {
         Expanded(
           child: TextField(
             controller: _ctrl,
+            focusNode: _focusNode,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
               labelText: widget.label,
+              helperText: widget.helperText,
               filled: false,
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
@@ -762,7 +729,6 @@ class _RateFieldState extends State<_RateField> {
             },
           ),
         ),
-        if (widget.trailing != null) widget.trailing!,
       ],
     ),
   );

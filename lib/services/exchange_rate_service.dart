@@ -1,91 +1,60 @@
-import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'package:http/http.dart' as http;
+import '../core/constants.dart';
 
-/// Thrown when the official FX endpoint cannot produce a usable KHR/USD rate.
-class ExchangeRateFetchException implements Exception {
-  ExchangeRateFetchException(this.message);
+/// Thrown when the stored Firestore FX document is missing or unusable.
+class ExchangeRateSyncException implements Exception {
+  ExchangeRateSyncException(this.message);
   final String message;
 
   @override
   String toString() => message;
 }
 
-/// Fetches the Cambodia MEF realtime USD/KHR reference (KHR per 1 USD).
+/// Loads USD/KHR (KHR per 1 USD) from Firestore — same unit as [AppSettings.khrPerUsd].
+///
+/// The value is maintained by CI (`fetch-rate.js`); the app does not call MEF directly.
 class ExchangeRateService {
-  ExchangeRateService(this._resolveUrl);
+  DocumentReference<Map<String, dynamic>> get _rateRef =>
+      FirebaseFirestore.instance
+          .collection(kFirestoreExchangeRateCollection)
+          .doc(kFirestoreExchangeRateDocId);
 
-  final String Function() _resolveUrl;
-
-  static const Duration _timeout = Duration(seconds: 25);
-
-  /// Returns official KHR per 1 USD (same unit as [AppSettings.khrPerUsd]).
-  Future<double> fetchOfficialKhrPerUsd() async {
-    final uri = Uri.parse(_resolveUrl());
-    final response = await http
-        .get(uri, headers: const {'accept': 'application/json'})
-        .timeout(_timeout);
-
-    if (response.statusCode != 200) {
-      throw ExchangeRateFetchException('HTTP ${response.statusCode}');
-    }
-
-    dynamic decoded;
-    try {
-      decoded = jsonDecode(response.body);
-    } on FormatException {
-      throw ExchangeRateFetchException('Invalid JSON.');
-    }
-
-    final row = _findUsdRow(decoded);
-    if (row == null) {
-      throw ExchangeRateFetchException('USD rate not found in response.');
-    }
-
-    final raw = row['average'] ?? row['bid'] ?? row['ask'];
-    if (raw == null) {
-      throw ExchangeRateFetchException('Missing rate fields.');
-    }
-
+  /// Validates and returns [khrPerUsd] from a Firestore document map.
+  double khrPerUsdFromMap(Map<String, dynamic> data) {
+    final raw = data['khrPerUsd'];
     final rate = switch (raw) {
-      num v => v.toDouble(),
+      num n => n.toDouble(),
       String s when s.trim().isNotEmpty => double.tryParse(s.trim()),
       _ => null,
     };
 
     if (rate == null || rate <= 0 || rate.isNaN || rate.isInfinite) {
-      throw ExchangeRateFetchException('Could not parse rate value.');
+      throw ExchangeRateSyncException('Invalid khrPerUsd in Firestore.');
     }
 
-    // Sanity bounds for KHR/USD reference (narrows malformed data).
     if (rate < 1000 || rate > 20000) {
-      throw ExchangeRateFetchException('Rate out of expected range.');
+      throw ExchangeRateSyncException('KHR/USD out of expected range.');
     }
 
     return rate;
   }
 
-  Map<String, dynamic>? _findUsdRow(dynamic decoded) {
-    Iterable<Map<String, dynamic>>? maps;
-
-    if (decoded is Map<String, dynamic>) {
-      final data = decoded['data'];
-      if (data is List) {
-        maps = data.whereType<Map<String, dynamic>>();
-      } else if (decoded['currency_id'] == 'USD') {
-        return decoded;
-      }
-    } else if (decoded is List) {
-      maps = decoded.whereType<Map<String, dynamic>>();
+  /// Same validation as [khrPerUsdFromMap] but returns null instead of throwing.
+  double? tryKhrPerUsdFromMap(Map<String, dynamic> data) {
+    try {
+      return khrPerUsdFromMap(data);
+    } on ExchangeRateSyncException {
+      return null;
     }
+  }
 
-    if (maps == null) return null;
-
-    for (final m in maps) {
-      if (m['currency_id'] == 'USD') {
-        return m;
-      }
+  /// One-shot read (e.g. tests or tools). Prefer the Firestore snapshot stream in [SettingsController] for the UI.
+  Future<double> fetchKhrPerUsdFromFirestore() async {
+    final snap = await _rateRef.get();
+    if (!snap.exists || snap.data() == null) {
+      throw ExchangeRateSyncException('Exchange rate document missing.');
     }
-    return null;
+    return khrPerUsdFromMap(snap.data()!);
   }
 }
