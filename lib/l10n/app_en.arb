@@ -61,6 +61,7 @@
   "roomNameEmpty": "Room name cannot be empty.",
   "roomNameDuplicate": "Another room already uses that name. Choose a different name.",
   "invalidNumber": "Please enter a valid number.",
+  "meterReadingEmpty": "Meter reading cannot be empty.",
   "filtersUpdated": "Filters updated.",
   "filtersCleared": "Filters cleared.",
   "actionCancelled": "Action cancelled.",

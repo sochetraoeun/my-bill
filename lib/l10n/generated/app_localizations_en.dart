@@ -154,6 +154,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invalidNumber => 'Please enter a valid number.';
 
   @override
+  String get meterReadingEmpty => 'Meter reading cannot be empty.';
+
+  @override
   String get filtersUpdated => 'Filters updated.';
 
   @override

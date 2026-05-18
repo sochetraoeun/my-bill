@@ -35,6 +35,19 @@ class _InputUsagePageState extends State<InputUsagePage> {
   final _currWater = TextEditingController();
 
   bool _saving = false;
+  /// After a failed save, re-run [FormState.validate] on meter edits so errors
+  /// clear immediately and paired prev/current fields stay in sync.
+  bool _meterLiveValidation = false;
+
+  void _onMeterControllersChanged() {
+    setState(() {});
+    if (_meterLiveValidation) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _formKey.currentState?.validate();
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -56,12 +69,15 @@ class _InputUsagePageState extends State<InputUsagePage> {
       _prefillAdjacentFromHistory(readings, _roomId, _month);
     }
     for (final c in [_prevElec, _currElec, _prevWater, _currWater]) {
-      c.addListener(() => setState(() {}));
+      c.addListener(_onMeterControllersChanged);
     }
   }
 
   @override
   void dispose() {
+    for (final c in [_prevElec, _currElec, _prevWater, _currWater]) {
+      c.removeListener(_onMeterControllersChanged);
+    }
     _prevElec.dispose();
     _currElec.dispose();
     _prevWater.dispose();
@@ -114,6 +130,7 @@ class _InputUsagePageState extends State<InputUsagePage> {
     if (_saving) return;
     final t = AppLocalizations.of(context);
     if (!(_formKey.currentState?.validate() ?? false)) {
+      _meterLiveValidation = true;
       AppSnack.error(context, t.formInvalid);
       return;
     }
@@ -360,7 +377,8 @@ class _InputUsagePageState extends State<InputUsagePage> {
               currLabel: t.fieldCurrMeter,
               usageLabel:
                   '${formatKwh(bill.elecUsageKwh)} • ${formatKhr(bill.elecAmountKhr)}',
-              validate: _validateMeter,
+              validatePrev: _validateMeterPrev,
+              validateCurr: _validateMeterCurr,
             ),
             const SizedBox(height: AppSpacing.md),
             _MeterSection(
@@ -373,7 +391,8 @@ class _InputUsagePageState extends State<InputUsagePage> {
               currLabel: t.fieldCurrMeter,
               usageLabel:
                   '${formatM3(bill.waterUsageM3)} • ${formatKhr(bill.waterAmountKhr)}',
-              validate: _validateMeter,
+              validatePrev: _validateMeterPrev,
+              validateCurr: _validateMeterCurr,
             ),
             const SizedBox(height: AppSpacing.lg),
             _PreviewCard(bill: bill, t: t, s: s),
@@ -407,15 +426,26 @@ class _InputUsagePageState extends State<InputUsagePage> {
     );
   }
 
-  String? _validateMeter(String? value, String? other) {
-    if (value == null || value.isEmpty || other == null || other.isEmpty) {
-      return null;
-    }
-    final v = double.tryParse(value.replaceAll(',', '')) ?? 0;
-    final o = double.tryParse(other.replaceAll(',', '')) ?? 0;
-    if (v < o) {
-      return AppLocalizations.of(context).errorCurrLessThanPrev;
-    }
+  String? _validateMeterPrev(String? value) {
+    final t = AppLocalizations.of(context);
+    final s = value?.trim() ?? '';
+    if (s.isEmpty) return t.meterReadingEmpty;
+    final n = double.tryParse(s.replaceAll(',', ''));
+    if (n == null) return t.invalidNumber;
+    return null;
+  }
+
+  String? _validateMeterCurr(String? value, String prevText) {
+    final t = AppLocalizations.of(context);
+    final s = value?.trim() ?? '';
+    if (s.isEmpty) return t.meterReadingEmpty;
+    final curr = double.tryParse(s.replaceAll(',', ''));
+    if (curr == null) return t.invalidNumber;
+    final ps = prevText.trim();
+    if (ps.isEmpty) return null;
+    final prev = double.tryParse(ps.replaceAll(',', ''));
+    if (prev == null) return null;
+    if (curr < prev) return t.errorCurrLessThanPrev;
     return null;
   }
 }
@@ -532,7 +562,8 @@ class _MeterSection extends StatelessWidget {
     required this.prevLabel,
     required this.currLabel,
     required this.usageLabel,
-    required this.validate,
+    required this.validatePrev,
+    required this.validateCurr,
   });
 
   final String title;
@@ -543,7 +574,8 @@ class _MeterSection extends StatelessWidget {
   final String prevLabel;
   final String currLabel;
   final String usageLabel;
-  final String? Function(String? value, String? other) validate;
+  final String? Function(String? value) validatePrev;
+  final String? Function(String? value, String prevText) validateCurr;
 
   @override
   Widget build(BuildContext context) {
@@ -595,6 +627,7 @@ class _MeterSection extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.md),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: TextFormField(
@@ -605,6 +638,7 @@ class _MeterSection extends StatelessWidget {
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                     ],
+                    validator: validatePrev,
                     decoration: InputDecoration(labelText: prevLabel),
                   ),
                 ),
@@ -618,7 +652,7 @@ class _MeterSection extends StatelessWidget {
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                     ],
-                    validator: (v) => validate(v, prev.text),
+                    validator: (v) => validateCurr(v, prev.text),
                     decoration: InputDecoration(labelText: currLabel),
                   ),
                 ),

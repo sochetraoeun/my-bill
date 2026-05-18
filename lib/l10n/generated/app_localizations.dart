@@ -374,6 +374,12 @@ abstract class AppLocalizations {
   /// **'Please enter a valid number.'**
   String get invalidNumber;
 
+  /// No description provided for @meterReadingEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Meter reading cannot be empty.'**
+  String get meterReadingEmpty;
+
   /// No description provided for @filtersUpdated.
   ///
   /// In en, this message translates to:

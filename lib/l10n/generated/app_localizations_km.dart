@@ -154,6 +154,9 @@ class AppLocalizationsKm extends AppLocalizations {
   String get invalidNumber => 'សូមបញ្ចូលលេខត្រឹមត្រូវ។';
 
   @override
+  String get meterReadingEmpty => 'លេខម៉ែត្រមិនអាចទទេបានទេ។';
+
+  @override
   String get filtersUpdated => 'បានធ្វើបច្ចុប្បន្នភាពតម្រង។';
 
   @override

@@ -13,6 +13,118 @@ import '../../services/excel_service.dart';
 import '../input/input_usage_page.dart';
 import '../widgets/bill_dialog.dart';
 
+/// Room / month filters for [HistoryPage] — outlined dropdowns with icon + label.
+class _HistoryFiltersBar extends StatelessWidget {
+  const _HistoryFiltersBar({
+    required this.roomLabel,
+    required this.monthLabel,
+    required this.roomFilter,
+    required this.monthFilter,
+    required this.roomItems,
+    required this.monthItems,
+    required this.onRoomChanged,
+    required this.onMonthChanged,
+  });
+
+  final String roomLabel;
+  final String monthLabel;
+  final String? roomFilter;
+  final String? monthFilter;
+  final List<DropdownMenuItem<String?>> roomItems;
+  final List<DropdownMenuItem<String?>> monthItems;
+  final ValueChanged<String?> onRoomChanged;
+  final ValueChanged<String?> onMonthChanged;
+
+  static List<Widget> _selectedItemLabels(
+    BuildContext context,
+    List<DropdownMenuItem<String?>> items,
+  ) {
+    final textStyle = Theme.of(context).textTheme.bodyLarge;
+    return items.map((item) {
+      final textWidget = item.child is Text ? item.child as Text : null;
+      final label = textWidget?.data ?? '';
+      return Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: textStyle,
+        ),
+      );
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final iconColor = scheme.onSurfaceVariant;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 3,
+            child: DropdownButtonFormField<String?>(
+              initialValue: roomFilter,
+              isExpanded: true,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              icon: Icon(
+                Icons.expand_more_rounded,
+                color: iconColor,
+              ),
+              decoration: InputDecoration(
+                labelText: roomLabel,
+                prefixIcon: Icon(
+                  Icons.meeting_room_outlined,
+                  size: 20,
+                  color: iconColor,
+                ),
+              ),
+              items: roomItems,
+              selectedItemBuilder: (ctx) =>
+                  _selectedItemLabels(ctx, roomItems),
+              onChanged: onRoomChanged,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            flex: 2,
+            child: DropdownButtonFormField<String?>(
+              initialValue: monthFilter,
+              isExpanded: true,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              icon: Icon(
+                Icons.expand_more_rounded,
+                color: iconColor,
+              ),
+              decoration: InputDecoration(
+                labelText: monthLabel,
+                prefixIcon: Icon(
+                  Icons.calendar_month_outlined,
+                  size: 20,
+                  color: iconColor,
+                ),
+              ),
+              items: monthItems,
+              selectedItemBuilder: (ctx) =>
+                  _selectedItemLabels(ctx, monthItems),
+              onChanged: onMonthChanged,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
 
@@ -53,81 +165,50 @@ class _HistoryPageState extends State<HistoryPage> {
         }).toList();
         final locale = settings.settings.localeCode;
 
+        final roomMenuItems = <DropdownMenuItem<String?>>[
+          DropdownMenuItem<String?>(
+            value: null,
+            child: Text(t.filterAllRooms),
+          ),
+          for (final room in rooms)
+            DropdownMenuItem<String?>(
+              value: room.id,
+              child: Text(room.name),
+            ),
+        ];
+        final monthMenuItems = <DropdownMenuItem<String?>>[
+          DropdownMenuItem<String?>(
+            value: null,
+            child: Text(t.filterAllMonths),
+          ),
+          for (final k in months)
+            DropdownMenuItem<String?>(
+              value: k,
+              child: Text(
+                formatYearMonthHuman(parseYearMonthKey(k), locale),
+              ),
+            ),
+        ];
+
         return Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.sm,
-                AppSpacing.lg,
-                AppSpacing.sm,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String?>(
-                      initialValue: _roomFilter,
-                      decoration: InputDecoration(
-                        labelText: t.fieldRoom,
-                        prefixIcon: const Icon(
-                          Icons.meeting_room_outlined,
-                          size: 18,
-                        ),
-                      ),
-                      items: [
-                        DropdownMenuItem<String?>(
-                          value: null,
-                          child: Text(t.filterAllRooms),
-                        ),
-                        for (final r in rooms)
-                          DropdownMenuItem<String?>(
-                            value: r.id,
-                            child: Text(r.name),
-                          ),
-                      ],
-                      onChanged: (v) {
-                        if (v == _roomFilter) return;
-                        setState(() => _roomFilter = v);
-                        _notifyFilterChange();
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: DropdownButtonFormField<String?>(
-                      initialValue: _monthFilter,
-                      decoration: InputDecoration(
-                        labelText: t.fieldMonth,
-                        prefixIcon: const Icon(
-                          Icons.calendar_month_outlined,
-                          size: 18,
-                        ),
-                      ),
-                      items: [
-                        DropdownMenuItem<String?>(
-                          value: null,
-                          child: Text(t.filterAllMonths),
-                        ),
-                        for (final k in months)
-                          DropdownMenuItem<String?>(
-                            value: k,
-                            child: Text(
-                              formatYearMonthHuman(
-                                parseYearMonthKey(k),
-                                locale,
-                              ),
-                            ),
-                          ),
-                      ],
-                      onChanged: (v) {
-                        if (v == _monthFilter) return;
-                        setState(() => _monthFilter = v);
-                        _notifyFilterChange();
-                      },
-                    ),
-                  ),
-                ],
-              ),
+            _HistoryFiltersBar(
+              roomLabel: t.fieldRoom,
+              monthLabel: t.fieldMonth,
+              roomFilter: _roomFilter,
+              monthFilter: _monthFilter,
+              roomItems: roomMenuItems,
+              monthItems: monthMenuItems,
+              onRoomChanged: (v) {
+                if (v == _roomFilter) return;
+                setState(() => _roomFilter = v);
+                _notifyFilterChange();
+              },
+              onMonthChanged: (v) {
+                if (v == _monthFilter) return;
+                setState(() => _monthFilter = v);
+                _notifyFilterChange();
+              },
             ),
             Expanded(
               child: list.isEmpty
