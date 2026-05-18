@@ -278,6 +278,24 @@ abstract class AppLocalizations {
   /// **'Current meter'**
   String get fieldCurrMeter;
 
+  /// No description provided for @electricMeterInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter every digit on the meter (often 6 or more). Include digits on the far left — usage is current minus previous (e.g. 203,576.8 − 203,375 = 201.8 kWh).'**
+  String get electricMeterInputHint;
+
+  /// No description provided for @electricTruncationAdjustedCanonical.
+  ///
+  /// In en, this message translates to:
+  /// **'Electricity readings were adjusted to full meter values (203,375 → 203,576.8 kWh). The numbers entered look like short dial readings without the leading digits on the far left (for example the “20…” in front of the right-hand wheels). Usage and cost use the corrected readings.'**
+  String get electricTruncationAdjustedCanonical;
+
+  /// No description provided for @electricTruncationAdjustedNeighbor.
+  ///
+  /// In en, this message translates to:
+  /// **'Electricity readings were adjusted using last month’s closing and the dial tails you typed. Literal subtraction of the values in the boxes was not used.'**
+  String get electricTruncationAdjustedNeighbor;
+
   /// No description provided for @previewBill.
   ///
   /// In en, this message translates to:

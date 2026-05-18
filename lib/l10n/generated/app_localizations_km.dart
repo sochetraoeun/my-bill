@@ -103,6 +103,18 @@ class AppLocalizationsKm extends AppLocalizations {
   String get fieldCurrMeter => 'ម៉ែត្របច្ចុប្បន្ន';
 
   @override
+  String get electricMeterInputHint =>
+      'បញ្ចូលលេខទាំងអស់លើម៉ែត្រ (ជារឿយៗ ៦ ខ្ទង់ឬច្រើនជាងនេះ)។ រួមបញ្ចូលខ្ទង់ខាងឆ្វេង — ប្រើប្រាស់ = បច្ចុប្បន្ន − មុន (ឧ. ២០៣,៥៧៦.៨ − ២០៣,៣៧៥ = ២០១.៨ kWh)។';
+
+  @override
+  String get electricTruncationAdjustedCanonical =>
+      'លេខអគ្គិសនីត្រូវបានកែទៅលេខម៉ែត្រពេញ (២០៣,៣៧៥ → ២០៣,៥៧៦.៨ kWh)។ លេខដែលបានបញ្ចូលហាក់ដូចជាខ្ទង់ស្តាំប៉ុណ្ណោះ ដោយបាត់ខ្ទង់ខាងឆ្វេងឆ្ងាយ (ឧ. «២០…» ពីមុខរង្វង់នាឡិកា)។ ប្រើប្រាស់និងតម្លៃប្រើលេខបានកែ។';
+
+  @override
+  String get electricTruncationAdjustedNeighbor =>
+      'លេខអគ្គិសនីត្រូវបានកែដោយប្រើការបិទម៉ែត្រខែមុន និងខ្ទង់ស្តាំដែលអ្នកបានបញ្ចូល។ មិនបានដកផ្ទាល់លេខក្នុងប្រអប់ដូចឃើញទេ។';
+
+  @override
   String get previewBill => 'មើលជាមុនវិក្កយបត្រ';
 
   @override

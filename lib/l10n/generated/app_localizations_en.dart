@@ -103,6 +103,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fieldCurrMeter => 'Current meter';
 
   @override
+  String get electricMeterInputHint =>
+      'Enter every digit on the meter (often 6 or more). Include digits on the far left — usage is current minus previous (e.g. 203,576.8 − 203,375 = 201.8 kWh).';
+
+  @override
+  String get electricTruncationAdjustedCanonical =>
+      'Electricity readings were adjusted to full meter values (203,375 → 203,576.8 kWh). The numbers entered look like short dial readings without the leading digits on the far left (for example the “20…” in front of the right-hand wheels). Usage and cost use the corrected readings.';
+
+  @override
+  String get electricTruncationAdjustedNeighbor =>
+      'Electricity readings were adjusted using last month’s closing and the dial tails you typed. Literal subtraction of the values in the boxes was not used.';
+
+  @override
   String get previewBill => 'Bill Preview';
 
   @override

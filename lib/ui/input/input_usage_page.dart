@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../controllers/readings_controller.dart';
 import '../../controllers/settings_controller.dart';
+import '../../core/electric_meter_truncation.dart';
 import '../../core/formatters.dart';
 import '../../core/meter_chain.dart';
 import '../../core/snack.dart';
@@ -85,8 +86,33 @@ class _InputUsagePageState extends State<InputUsagePage> {
     super.dispose();
   }
 
-  double _read(TextEditingController c) =>
-      double.tryParse(c.text.trim().replaceAll(',', '')) ?? 0;
+  double _read(TextEditingController c) => tryParseMeterReading(c.text) ?? 0;
+
+  ResolvedElectricInputs _resolvedElectricInputs(ReadingsController readings) {
+    final omitEditing =
+        widget.editing == null ? <String>{} : {widget.editing!.id};
+    final pred =
+        predecessorReading(readings.readings, _roomId, _month, omitEditing);
+    final succ =
+        successorReading(readings.readings, _roomId, _month, omitEditing);
+    return resolveTruncatedElectricInputs(
+      prevInput: _read(_prevElec),
+      currInput: _read(_currElec),
+      predecessorClosing: pred?.currElec,
+      successorOpening: succ?.prevElec,
+    );
+  }
+
+  String _electricTruncationBanner(AppLocalizations t, ResolvedElectricInputs r) {
+    switch (r.explanation) {
+      case ElectricTruncationExplanation.none:
+        return '';
+      case ElectricTruncationExplanation.canonicalKnownTruncatedPair:
+        return t.electricTruncationAdjustedCanonical;
+      case ElectricTruncationExplanation.inferredFromNeighborClosing:
+        return t.electricTruncationAdjustedNeighbor;
+    }
+  }
 
   /// Stable doc id so saving the same room+month twice updates rather than
   /// creates duplicates. Editing uses the same scheme; if the user changes
@@ -140,13 +166,14 @@ class _InputUsagePageState extends State<InputUsagePage> {
     final navigator = Navigator.of(context);
     final newId = _docId(_roomId, _month);
     final editing = widget.editing;
+    final resolvedElec = _resolvedElectricInputs(readings);
 
     final readingDraft = Reading(
       id: newId,
       roomId: _roomId,
       month: _month,
-      prevElec: _read(_prevElec),
-      currElec: _read(_currElec),
+      prevElec: resolvedElec.prev,
+      currElec: resolvedElec.curr,
       prevWater: _read(_prevWater),
       currWater: _read(_currWater),
       createdAt: editing?.createdAt ?? DateTime.now(),
@@ -248,13 +275,14 @@ class _InputUsagePageState extends State<InputUsagePage> {
     final t = AppLocalizations.of(context);
     final settings = Get.find<SettingsController>();
     final readings = Get.find<ReadingsController>();
+    final resolvedElec = _resolvedElectricInputs(readings);
     final billColors = Theme.of(context).extension<BillColors>()!;
     final s = settings.settings;
     final locale = s.localeCode;
 
     final bill = computeBillFromValues(
-      prevElec: _read(_prevElec),
-      currElec: _read(_currElec),
+      prevElec: resolvedElec.prev,
+      currElec: resolvedElec.curr,
       prevWater: _read(_prevWater),
       currWater: _read(_currWater),
       s: s,
@@ -366,6 +394,15 @@ class _InputUsagePageState extends State<InputUsagePage> {
                 icon: Icons.info_outline_rounded,
               ),
             ],
+            if (resolvedElec.wasAdjusted) ...[
+              const SizedBox(height: AppSpacing.md),
+              _InfoBanner(
+                text: _electricTruncationBanner(t, resolvedElec),
+                color: billColors.elec,
+                surfaceColor: billColors.elec.withValues(alpha: 0.12),
+                icon: Icons.auto_fix_high_rounded,
+              ),
+            ],
             const SizedBox(height: AppSpacing.lg),
             _MeterSection(
               title: t.sectionElectricity,
@@ -375,10 +412,11 @@ class _InputUsagePageState extends State<InputUsagePage> {
               curr: _currElec,
               prevLabel: t.fieldPrevMeter,
               currLabel: t.fieldCurrMeter,
+              helperText: t.electricMeterInputHint,
               usageLabel:
                   '${formatKwh(bill.elecUsageKwh)} • ${formatKhr(bill.elecAmountKhr)}',
               validatePrev: _validateMeterPrev,
-              validateCurr: _validateMeterCurr,
+              validateCurr: _validateMeterCurrElectric,
             ),
             const SizedBox(height: AppSpacing.md),
             _MeterSection(
@@ -430,7 +468,7 @@ class _InputUsagePageState extends State<InputUsagePage> {
     final t = AppLocalizations.of(context);
     final s = value?.trim() ?? '';
     if (s.isEmpty) return t.meterReadingEmpty;
-    final n = double.tryParse(s.replaceAll(',', ''));
+    final n = tryParseMeterReading(s);
     if (n == null) return t.invalidNumber;
     return null;
   }
@@ -439,13 +477,28 @@ class _InputUsagePageState extends State<InputUsagePage> {
     final t = AppLocalizations.of(context);
     final s = value?.trim() ?? '';
     if (s.isEmpty) return t.meterReadingEmpty;
-    final curr = double.tryParse(s.replaceAll(',', ''));
+    final curr = tryParseMeterReading(s);
     if (curr == null) return t.invalidNumber;
     final ps = prevText.trim();
     if (ps.isEmpty) return null;
-    final prev = double.tryParse(ps.replaceAll(',', ''));
+    final prev = tryParseMeterReading(ps);
     if (prev == null) return null;
     if (curr < prev) return t.errorCurrLessThanPrev;
+    return null;
+  }
+
+  String? _validateMeterCurrElectric(String? value, String prevText) {
+    final t = AppLocalizations.of(context);
+    final s = value?.trim() ?? '';
+    if (s.isEmpty) return t.meterReadingEmpty;
+    final curr = tryParseMeterReading(s);
+    if (curr == null) return t.invalidNumber;
+    final ps = prevText.trim();
+    if (ps.isEmpty) return null;
+    if (tryParseMeterReading(ps) == null) return null;
+    final readings = Get.find<ReadingsController>();
+    final resolved = _resolvedElectricInputs(readings);
+    if (resolved.curr < resolved.prev) return t.errorCurrLessThanPrev;
     return null;
   }
 }
@@ -561,6 +614,7 @@ class _MeterSection extends StatelessWidget {
     required this.curr,
     required this.prevLabel,
     required this.currLabel,
+    this.helperText,
     required this.usageLabel,
     required this.validatePrev,
     required this.validateCurr,
@@ -573,6 +627,7 @@ class _MeterSection extends StatelessWidget {
   final TextEditingController curr;
   final String prevLabel;
   final String currLabel;
+  final String? helperText;
   final String usageLabel;
   final String? Function(String? value) validatePrev;
   final String? Function(String? value, String prevText) validateCurr;
@@ -636,7 +691,9 @@ class _MeterSection extends StatelessWidget {
                       decimal: true,
                     ),
                     inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'[0-9., \u00a0\u202f]'),
+                      ),
                     ],
                     validator: validatePrev,
                     decoration: InputDecoration(labelText: prevLabel),
@@ -650,7 +707,9 @@ class _MeterSection extends StatelessWidget {
                       decimal: true,
                     ),
                     inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'[0-9., \u00a0\u202f]'),
+                      ),
                     ],
                     validator: (v) => validateCurr(v, prev.text),
                     decoration: InputDecoration(labelText: currLabel),
@@ -658,6 +717,16 @@ class _MeterSection extends StatelessWidget {
                 ),
               ],
             ),
+            if (helperText != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                helperText!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  height: 1.35,
+                ),
+              ),
+            ],
           ],
         ),
       ),

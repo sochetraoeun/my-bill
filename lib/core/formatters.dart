@@ -4,6 +4,7 @@ final _khr = NumberFormat.decimalPattern('en_US');
 final _usd = NumberFormat.currency(locale: 'en_US', symbol: r'$', decimalDigits: 2);
 final _whole = NumberFormat.decimalPattern('en_US');
 final _decimal = NumberFormat('#,##0.0', 'en_US');
+final _meterInputDisplay = NumberFormat('#,##0.###', 'en_US');
 
 String formatKhr(num value) => '${_khr.format(value.round())} ៛';
 
@@ -27,9 +28,22 @@ DateTime parseYearMonthKey(String key) {
   return DateTime(int.parse(parts[0]), int.parse(parts[1]));
 }
 
-/// Display form for readings / meter inputs (matches input form trimming).
-String formatMeterInputText(double v) =>
-    v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toString();
+/// Removes grouping separators users may type when copying meter readings.
+String normalizeMeterReadingInput(String raw) {
+  var s = raw.trim();
+  s = s.replaceAll(',', '');
+  s = s.replaceAll(' ', '');
+  s = s.replaceAll('\u00a0', '');
+  s = s.replaceAll('\u202f', '');
+  return s;
+}
+
+/// Parses a meter value after [normalizeMeterReadingInput].
+double? tryParseMeterReading(String raw) =>
+    double.tryParse(normalizeMeterReadingInput(raw));
+
+/// Display form for readings / meter inputs (grouped thousands for clarity).
+String formatMeterInputText(double v) => _meterInputDisplay.format(v);
 
 /// Whether two meters from storage are the same reading (rounding noise).
 bool metersRoughlyEqual(double a, double b) => (a - b).abs() < 1e-9;
