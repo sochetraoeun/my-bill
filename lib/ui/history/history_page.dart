@@ -10,8 +10,8 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../models/reading.dart';
 import '../../services/bill_calculator.dart';
 import '../../services/excel_service.dart';
-import '../input/input_usage_page.dart';
 import '../widgets/bill_dialog.dart';
+import 'reading_detail_page.dart';
 
 /// Room / month filters for [HistoryPage] — outlined dropdowns with icon + label.
 class _HistoryFiltersBar extends StatelessWidget {
@@ -234,7 +234,8 @@ class _HistoryPageState extends State<HistoryPage> {
                           water: formatM3(b.waterUsageM3),
                           totalKhr: formatKhr(b.totalKhr),
                           totalUsd: formatUsd(b.totalUsd),
-                          onTap: () => Get.to(() => InputUsagePage(editing: r)),
+                          onTap: () =>
+                              Get.to(() => ReadingDetailPage(reading: r)),
                           onLongPress: () => _confirmDelete(context, r),
                         );
                       },

@@ -240,6 +240,9 @@ class AppLocalizationsKm extends AppLocalizations {
   String get historyTitle => 'ប្រវត្តិ';
 
   @override
+  String get readingDetailTitle => 'ព័ត៌មានលមកមើលតាមលេខ';
+
+  @override
   String get filterAllRooms => 'បន្ទប់ទាំងអស់';
 
   @override

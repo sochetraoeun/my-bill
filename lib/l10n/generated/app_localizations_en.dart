@@ -241,6 +241,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get historyTitle => 'History';
 
   @override
+  String get readingDetailTitle => 'Reading details';
+
+  @override
   String get filterAllRooms => 'All rooms';
 
   @override

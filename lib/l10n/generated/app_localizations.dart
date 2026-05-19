@@ -496,6 +496,12 @@ abstract class AppLocalizations {
   /// **'History'**
   String get historyTitle;
 
+  /// No description provided for @readingDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading details'**
+  String get readingDetailTitle;
+
   /// No description provided for @filterAllRooms.
   ///
   /// In en, this message translates to:

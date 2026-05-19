@@ -109,6 +109,7 @@
   },
 
   "historyTitle": "History",
+  "readingDetailTitle": "Reading details",
   "filterAllRooms": "All rooms",
   "filterAllMonths": "All months",
   "emptyHistory": "No readings yet.",
