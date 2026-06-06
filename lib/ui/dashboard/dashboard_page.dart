@@ -113,6 +113,22 @@ class DashboardPage extends StatelessWidget {
               roomsLabel: t.statRoomsReported,
             ),
             const SizedBox(height: AppSpacing.lg),
+            Builder(builder: (context) {
+              final progress = dash.monthProgress();
+              if (progress.completeCount == 0 &&
+                  progress.roomStatuses.values.every((s) => !s.hasReading)) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                child: _MonthProgressCard(
+                  dash: dash,
+                  settings: settings,
+                  locale: locale,
+                  t: t,
+                ),
+              );
+            }),
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
@@ -125,14 +141,14 @@ class DashboardPage extends StatelessWidget {
                 StatCard(
                   label: t.statTotalKwh,
                   value: formatKwh(totals.totalKwh),
-                  sub: t.statThisMonth,
+                  sub: '${formatKhr(totals.elecKhr)}  •  ${formatUsd(settings.settings.khrPerUsd == 0 ? 0 : totals.elecKhr / settings.settings.khrPerUsd)}',
                   icon: Icons.bolt_rounded,
                   color: billColors.elec,
                 ),
                 StatCard(
                   label: t.statTotalM3,
                   value: formatM3(totals.totalM3),
-                  sub: t.statThisMonth,
+                  sub: '${formatKhr(totals.waterKhr)}  •  ${formatUsd(settings.settings.khrPerUsd == 0 ? 0 : totals.waterKhr / settings.settings.khrPerUsd)}',
                   icon: Icons.water_drop_rounded,
                   color: billColors.water,
                 ),
@@ -269,6 +285,247 @@ class _SectionHeader extends StatelessWidget {
           fontWeight: FontWeight.w700,
           letterSpacing: -0.2,
         ),
+      ),
+    );
+  }
+}
+
+class _MonthProgressCard extends StatelessWidget {
+  const _MonthProgressCard({
+    required this.dash,
+    required this.settings,
+    required this.locale,
+    required this.t,
+  });
+
+  final DashboardController dash;
+  final SettingsController settings;
+  final String locale;
+  final AppLocalizations t;
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = dash.monthProgress();
+    final scheme = Theme.of(context).colorScheme;
+    final billColors = Theme.of(context).extension<BillColors>()!;
+
+    final statusColor = progress.isAllComplete ? billColors.success : billColors.warning;
+    final statusBg = progress.isAllComplete
+        ? billColors.successSurface
+        : billColors.warningSurface;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    progress.isAllComplete
+                        ? Icons.check_circle_rounded
+                        : Icons.pending_rounded,
+                    color: statusColor,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    t.monthProgressTitle,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusBg,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                  ),
+                  child: Text(
+                    progress.isAllComplete ? t.monthComplete : t.monthIncomplete,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadius.xs),
+              child: LinearProgressIndicator(
+                value: progress.progress,
+                minHeight: 8,
+                backgroundColor: scheme.surfaceContainerHighest,
+                color: statusColor,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              t.monthProgressRooms(progress.completeCount, progress.totalRooms),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+            if (!progress.isAllComplete) ...[
+              const SizedBox(height: AppSpacing.md),
+              ...progress.roomStatuses.values
+                  .where((s) => !s.isFullyComplete)
+                  .map((s) => Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                    child: _RoomStatusRow(
+                      roomName: settings.roomById(s.roomId).name,
+                      status: s,
+                      billColors: billColors,
+                      t: t,
+                    ),
+                  )),
+            ],
+            if (!progress.isAllComplete && progress.estimatedDaysRemaining != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.schedule_rounded,
+                      size: 16,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        t.monthEstimatedCompletion(
+                          t.durationDays(progress.estimatedDaysRemaining!),
+                        ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            if (progress.isAllComplete) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  Icon(
+                    Icons.celebration_rounded,
+                    size: 16,
+                    color: billColors.success,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    t.monthAllCollected,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: billColors.success,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RoomStatusRow extends StatelessWidget {
+  const _RoomStatusRow({
+    required this.roomName,
+    required this.status,
+    required this.billColors,
+    required this.t,
+  });
+
+  final String roomName;
+  final RoomCompletionStatus status;
+  final BillColors billColors;
+  final AppLocalizations t;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(AppRadius.xs),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.meeting_room_outlined, size: 14, color: scheme.onSurfaceVariant),
+          const SizedBox(width: 6),
+          Text(
+            roomName,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const Spacer(),
+          if (!status.hasReading)
+            Text(
+              t.monthIncomplete,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: billColors.warning,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          else ...[
+            Icon(Icons.bolt_rounded, size: 12, color: billColors.elec),
+            const SizedBox(width: 2),
+            Text(
+              status.elecDaysSpan != null ? '${status.elecDaysSpan}d' : '—',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: status.isElecComplete ? billColors.success : billColors.warning,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Icon(Icons.water_drop_rounded, size: 12, color: billColors.water),
+            const SizedBox(width: 2),
+            Text(
+              status.waterDaysSpan != null ? '${status.waterDaysSpan}d' : '—',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: status.isWaterComplete ? billColors.success : billColors.warning,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

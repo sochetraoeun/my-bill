@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../controllers/readings_controller.dart';
 import '../../controllers/settings_controller.dart';
@@ -30,12 +31,15 @@ class _InputUsagePageState extends State<InputUsagePage> {
 
   late String _roomId;
   late DateTime _month;
+  late DateTime _prevDate;
+  late DateTime _currDate;
   final _prevElec = TextEditingController();
   final _currElec = TextEditingController();
   final _prevWater = TextEditingController();
   final _currWater = TextEditingController();
 
   bool _saving = false;
+  bool _showEstimate = false;
   /// After a failed save, re-run [FormState.validate] on meter edits so errors
   /// clear immediately and paired prev/current fields stay in sync.
   bool _meterLiveValidation = false;
@@ -59,6 +63,9 @@ class _InputUsagePageState extends State<InputUsagePage> {
     if (e != null) {
       _roomId = e.roomId;
       _month = DateTime(e.month.year, e.month.month);
+      final fallback = e.createdAt;
+      _prevDate = e.prevElecDate ?? fallback;
+      _currDate = e.currElecDate ?? fallback;
       _prevElec.text = formatMeterInputText(e.prevElec);
       _currElec.text = formatMeterInputText(e.currElec);
       _prevWater.text = formatMeterInputText(e.prevWater);
@@ -67,6 +74,8 @@ class _InputUsagePageState extends State<InputUsagePage> {
       _roomId = settings.settings.rooms.first.id;
       final now = DateTime.now();
       _month = DateTime(now.year, now.month);
+      _prevDate = DateTime(now.year, now.month - 1, now.day);
+      _currDate = now;
       _prefillAdjacentFromHistory(readings, _roomId, _month);
     }
     for (final c in [_prevElec, _currElec, _prevWater, _currWater]) {
@@ -177,6 +186,10 @@ class _InputUsagePageState extends State<InputUsagePage> {
       prevWater: _read(_prevWater),
       currWater: _read(_currWater),
       createdAt: editing?.createdAt ?? DateTime.now(),
+      prevElecDate: _prevDate,
+      currElecDate: _currDate,
+      prevWaterDate: _prevDate,
+      currWaterDate: _currDate,
     );
 
     final excludeNeighbors = <String>{
@@ -357,6 +370,15 @@ class _InputUsagePageState extends State<InputUsagePage> {
                   if (picked != null) {
                     setState(() {
                       _month = DateTime(picked.year, picked.month);
+                      _prevDate = DateTime(picked.year, picked.month, 1);
+                      final lastDay = DateTime(picked.year, picked.month + 1, 0).day;
+                      final now = DateTime.now();
+                      if (picked.year == now.year && picked.month == now.month && now.day < lastDay) {
+                        _currDate = DateTime(now.year, now.month, now.day);
+                      } else {
+                        _currDate = DateTime(picked.year, picked.month, lastDay);
+                      }
+                      _showEstimate = false;
                       if (widget.editing == null) {
                         _currElec.clear();
                         _currWater.clear();
@@ -417,6 +439,25 @@ class _InputUsagePageState extends State<InputUsagePage> {
                   '${formatKwh(bill.elecUsageKwh)} • ${formatKhr(bill.elecAmountKhr)}',
               validatePrev: _validateMeterPrev,
               validateCurr: _validateMeterCurrElectric,
+              prevDate: _prevDate,
+              currDate: _currDate,
+              targetDays: _daysInMonth(_month),
+              locale: locale,
+              onPrevDateTap: () => _pickDate(
+                initial: _prevDate,
+                onPicked: (d) => setState(() {
+                  _prevDate = d;
+                  _showEstimate = false;
+                }),
+              ),
+              onCurrDateTap: () => _pickDate(
+                initial: _currDate,
+                onPicked: (d) => setState(() {
+                  _currDate = d;
+                  _showEstimate = false;
+                }),
+              ),
+              onEstimateTap: () => setState(() => _showEstimate = true),
             ),
             const SizedBox(height: AppSpacing.md),
             _MeterSection(
@@ -434,6 +475,16 @@ class _InputUsagePageState extends State<InputUsagePage> {
             ),
             const SizedBox(height: AppSpacing.lg),
             _PreviewCard(bill: bill, t: t, s: s),
+            if (_showEstimate) ...[
+              const SizedBox(height: AppSpacing.lg),
+              _EstimateCard(
+                bill: bill,
+                daysSpan: _currDate.difference(_prevDate).inDays,
+                targetDays: _daysInMonth(_month),
+                s: s,
+                t: t,
+              ),
+            ],
           ],
         ),
       ),
@@ -462,6 +513,24 @@ class _InputUsagePageState extends State<InputUsagePage> {
         ),
       ),
     );
+  }
+
+  int _daysInMonth(DateTime month) =>
+      DateTime(month.year, month.month + 1, 0).day;
+
+  Future<void> _pickDate({
+    required DateTime initial,
+    required void Function(DateTime) onPicked,
+  }) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
+    );
+    if (picked != null && mounted) {
+      onPicked(picked);
+    }
   }
 
   String? _validateMeterPrev(String? value) {
@@ -618,6 +687,13 @@ class _MeterSection extends StatelessWidget {
     required this.usageLabel,
     required this.validatePrev,
     required this.validateCurr,
+    this.prevDate,
+    this.currDate,
+    this.targetDays,
+    this.locale,
+    this.onPrevDateTap,
+    this.onCurrDateTap,
+    this.onEstimateTap,
   });
 
   final String title;
@@ -631,9 +707,24 @@ class _MeterSection extends StatelessWidget {
   final String usageLabel;
   final String? Function(String? value) validatePrev;
   final String? Function(String? value, String prevText) validateCurr;
+  final DateTime? prevDate;
+  final DateTime? currDate;
+  final int? targetDays;
+  final String? locale;
+  final VoidCallback? onPrevDateTap;
+  final VoidCallback? onCurrDateTap;
+  final VoidCallback? onEstimateTap;
+
+  bool get _hasDates => prevDate != null && currDate != null;
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final daysSpan = _hasDates ? currDate!.difference(prevDate!).inDays : 0;
+    final monthDays = targetDays ?? 30;
+    final isFullMonth = !_hasDates || daysSpan >= monthDays - 1;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -680,6 +771,40 @@ class _MeterSection extends StatelessWidget {
                 ),
               ],
             ),
+            if (_hasDates) ...[
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: _DateChip(
+                      label: t.fieldPrevDate,
+                      date: prevDate!,
+                      locale: locale!,
+                      color: color,
+                      onTap: onPrevDateTap!,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: _DateChip(
+                      label: t.fieldCurrDate,
+                      date: currDate!,
+                      locale: locale!,
+                      color: color,
+                      onTap: onCurrDateTap!,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _DaysSpanIndicator(
+                daysSpan: daysSpan,
+                targetDays: monthDays,
+                isFullMonth: isFullMonth,
+                color: color,
+                t: t,
+              ),
+            ],
             const SizedBox(height: AppSpacing.md),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -717,12 +842,54 @@ class _MeterSection extends StatelessWidget {
                 ),
               ],
             ),
+            if (_hasDates && !isFullMonth) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: scheme.errorContainer.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(AppRadius.xs),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.schedule_rounded, size: 14, color: scheme.error),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        t.monthNotComplete((monthDays - 1) - daysSpan),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.error,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    if (onEstimateTap != null)
+                      TextButton.icon(
+                        onPressed: onEstimateTap,
+                        icon: const Icon(Icons.calculate_rounded, size: 16),
+                        label: Text(t.estimateButton),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          minimumSize: const Size(0, 32),
+                          textStyle: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
             if (helperText != null) ...[
               const SizedBox(height: AppSpacing.sm),
               Text(
                 helperText!,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: scheme.onSurfaceVariant,
                   height: 1.35,
                 ),
               ),
@@ -730,6 +897,119 @@ class _MeterSection extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DateChip extends StatelessWidget {
+  const _DateChip({
+    required this.label,
+    required this.date,
+    required this.locale,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final DateTime date;
+  final String locale;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: 8,
+        ),
+        decoration: BoxDecoration(
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.calendar_today_rounded, size: 14, color: color),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 10,
+                    ),
+                  ),
+                  Text(
+                    DateFormat.yMMMd(locale).format(date),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DaysSpanIndicator extends StatelessWidget {
+  const _DaysSpanIndicator({
+    required this.daysSpan,
+    required this.targetDays,
+    required this.isFullMonth,
+    required this.color,
+    required this.t,
+  });
+
+  final int daysSpan;
+  final int targetDays;
+  final bool isFullMonth;
+  final Color color;
+  final AppLocalizations t;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final displayColor = isFullMonth ? color : scheme.error;
+    final progress = (daysSpan / (targetDays - 1)).clamp(0.0, 1.0);
+
+    return Row(
+      children: [
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 4,
+              backgroundColor: scheme.surfaceContainerHighest,
+              color: displayColor,
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Text(
+          t.daysSpanLabel(daysSpan),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: displayColor,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Icon(
+          isFullMonth ? Icons.check_circle_rounded : Icons.pending_rounded,
+          size: 14,
+          color: displayColor,
+        ),
+      ],
     );
   }
 }
@@ -877,6 +1157,252 @@ class _PreviewCard extends StatelessWidget {
         Text(
           amount,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EstimateCard extends StatelessWidget {
+  const _EstimateCard({
+    required this.bill,
+    required this.daysSpan,
+    required this.targetDays,
+    required this.s,
+    required this.t,
+  });
+
+  final BillBreakdown bill;
+  final int daysSpan;
+  final int targetDays;
+  final AppSettings s;
+  final AppLocalizations t;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final billColors = Theme.of(context).extension<BillColors>()!;
+
+    final actualDays = daysSpan > 0 ? daysSpan : 1;
+    final factor = targetDays / actualDays;
+
+    final estElecKwh = bill.elecUsageKwh * factor;
+    final estWaterM3 = bill.waterUsageM3 * factor;
+    final estElecKhr = estElecKwh * s.elecRateKhrPerKwh;
+    final estWaterKhr = estWaterM3 * s.waterRateKhrPerM3;
+    final estTotalKhr = estElecKhr + estWaterKhr;
+    final estTotalUsd = s.khrPerUsd > 0 ? estTotalKhr / s.khrPerUsd : 0.0;
+
+    final dailyElec = bill.elecUsageKwh / actualDays;
+    final dailyWater = bill.waterUsageM3 / actualDays;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            scheme.tertiary.withValues(alpha: 0.10),
+            scheme.tertiary.withValues(alpha: 0.04),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: scheme.tertiary.withValues(alpha: 0.25)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.calculate_rounded, color: scheme.tertiary),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    t.estimateTitle,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: scheme.tertiary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                  ),
+                  child: Text(
+                    t.estimateBadge(actualDays, targetDays),
+                    style: TextStyle(
+                      color: scheme.tertiary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    t.estimateReason,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    t.estimateExplanation(actualDays, targetDays),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            Text(
+              t.estimateDailyRate,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(Icons.bolt_rounded, size: 14, color: billColors.elec),
+                const SizedBox(width: 4),
+                Text(
+                  '${dailyElec.toStringAsFixed(2)} ${t.unitKwh}/${t.perDay}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(width: AppSpacing.lg),
+                Icon(Icons.water_drop_rounded, size: 14, color: billColors.water),
+                const SizedBox(width: 4),
+                Text(
+                  '${dailyWater.toStringAsFixed(2)} ${t.unitM3}/${t.perDay}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+              child: Divider(
+                color: scheme.tertiary.withValues(alpha: 0.20),
+                height: 1,
+              ),
+            ),
+
+            Text(
+              t.estimateProjected(targetDays),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _estRow(
+              context,
+              icon: Icons.bolt_rounded,
+              iconColor: billColors.elec,
+              label: t.sectionElectricity,
+              usage: formatKwh(estElecKwh),
+              amount: formatKhr(estElecKhr),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            _estRow(
+              context,
+              icon: Icons.water_drop_rounded,
+              iconColor: billColors.water,
+              label: t.sectionWater,
+              usage: formatM3(estWaterM3),
+              amount: formatKhr(estWaterKhr),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+              child: Divider(
+                color: scheme.tertiary.withValues(alpha: 0.20),
+                height: 1,
+              ),
+            ),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  t.estimateTotal,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      formatKhr(estTotalKhr),
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: scheme.tertiary,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                    Text(
+                      formatUsd(estTotalUsd),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _estRow(
+    BuildContext context, {
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String usage,
+    required String amount,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: iconColor),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(
+            '$label: $usage',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        Text(
+          amount,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
             fontWeight: FontWeight.w700,
           ),
         ),

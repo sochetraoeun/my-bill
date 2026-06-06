@@ -24,6 +24,13 @@ class FirestoreReadingsRepository implements ReadingsRepository {
       return DateTime.now();
     }
 
+    DateTime? parseNullable(dynamic v) {
+      if (v == null) return null;
+      if (v is Timestamp) return v.toDate();
+      if (v is String) return DateTime.parse(v);
+      return null;
+    }
+
     return Reading(
       id: snap.id,
       roomId: j['roomId'] as String,
@@ -33,6 +40,10 @@ class FirestoreReadingsRepository implements ReadingsRepository {
       prevWater: (j['prevWater'] as num).toDouble(),
       currWater: (j['currWater'] as num).toDouble(),
       createdAt: parse(j['createdAt']),
+      prevElecDate: parseNullable(j['prevElecDate']),
+      currElecDate: parseNullable(j['currElecDate']),
+      prevWaterDate: parseNullable(j['prevWaterDate']),
+      currWaterDate: parseNullable(j['currWaterDate']),
     );
   }
 
@@ -45,6 +56,14 @@ class FirestoreReadingsRepository implements ReadingsRepository {
     'prevWater': r.prevWater,
     'currWater': r.currWater,
     'createdAt': Timestamp.fromDate(r.createdAt),
+    if (r.prevElecDate != null)
+      'prevElecDate': Timestamp.fromDate(r.prevElecDate!),
+    if (r.currElecDate != null)
+      'currElecDate': Timestamp.fromDate(r.currElecDate!),
+    if (r.prevWaterDate != null)
+      'prevWaterDate': Timestamp.fromDate(r.prevWaterDate!),
+    if (r.currWaterDate != null)
+      'currWaterDate': Timestamp.fromDate(r.currWaterDate!),
   };
 
   @override

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../controllers/readings_controller.dart';
 import '../../controllers/settings_controller.dart';
@@ -86,6 +87,11 @@ class RoomDetailPage extends StatelessWidget {
                 water: formatM3(b.waterUsageM3),
                 totalKhr: formatKhr(b.totalKhr),
                 totalUsd: formatUsd(b.totalUsd),
+                prevDate: r.prevElecDate,
+                currDate: r.currElecDate,
+                daysSpan: r.elecDaysSpan,
+                isMonthComplete: r.isMonthComplete,
+                locale: locale,
                 reorderIndex: i,
                 reorderTooltip: t.reorderReadingsHint,
                 onTap: () => Get.to(() => InputUsagePage(editing: r)),
@@ -251,6 +257,11 @@ class _ReadingTile extends StatelessWidget {
     required this.water,
     required this.totalKhr,
     required this.totalUsd,
+    this.prevDate,
+    this.currDate,
+    this.daysSpan,
+    this.isMonthComplete = true,
+    this.locale,
     this.reorderIndex,
     this.reorderTooltip,
     this.onTap,
@@ -263,6 +274,11 @@ class _ReadingTile extends StatelessWidget {
   final String water;
   final String totalKhr;
   final String totalUsd;
+  final DateTime? prevDate;
+  final DateTime? currDate;
+  final int? daysSpan;
+  final bool isMonthComplete;
+  final String? locale;
   final int? reorderIndex;
   final String? reorderTooltip;
   final VoidCallback? onTap;
@@ -273,6 +289,8 @@ class _ReadingTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final billColors = Theme.of(context).extension<BillColors>()!;
+    final hasDates = prevDate != null && currDate != null;
+
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.md),
@@ -280,116 +298,191 @@ class _ReadingTile extends StatelessWidget {
         onLongPress: onLongPress,
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (reorderIndex != null) ...[
-                ReorderableDragStartListener(
-                  index: reorderIndex!,
-                  child: reorderTooltip != null && reorderTooltip!.isNotEmpty
-                      ? Tooltip(
-                          message: reorderTooltip!,
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: AppSpacing.xs),
-                            child: Icon(
-                              Icons.drag_indicator_rounded,
-                              color: scheme.onSurfaceVariant,
-                              size: 28,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (reorderIndex != null) ...[
+                    ReorderableDragStartListener(
+                      index: reorderIndex!,
+                      child: reorderTooltip != null && reorderTooltip!.isNotEmpty
+                          ? Tooltip(
+                              message: reorderTooltip!,
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: AppSpacing.xs),
+                                child: Icon(
+                                  Icons.drag_indicator_rounded,
+                                  color: scheme.onSurfaceVariant,
+                                  size: 28,
+                                ),
+                              ),
+                            )
+                          : Padding(
+                              padding: const EdgeInsets.only(right: AppSpacing.xs),
+                              child: Icon(
+                                Icons.drag_indicator_rounded,
+                                color: scheme.onSurfaceVariant,
+                                size: 28,
+                              ),
                             ),
-                          ),
-                        )
-                      : Padding(
-                          padding: const EdgeInsets.only(right: AppSpacing.xs),
-                          child: Icon(
-                            Icons.drag_indicator_rounded,
-                            color: scheme.onSurfaceVariant,
-                            size: 28,
-                          ),
-                        ),
-                ),
-              ],
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: scheme.primary.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                alignment: Alignment.center,
-                child: Icon(
-                  Icons.calendar_month_rounded,
-                  color: scheme.primary,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      monthLabel,
-                      style: Theme.of(context).textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
+                  ],
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: scheme.primary.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.calendar_month_rounded,
+                      color: scheme.primary,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.bolt_rounded,
-                          size: 14,
-                          color: billColors.elec,
-                        ),
-                        const SizedBox(width: 2),
                         Text(
-                          elec,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: scheme.onSurfaceVariant),
+                          monthLabel,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Icon(
-                          Icons.water_drop_rounded,
-                          size: 14,
-                          color: billColors.water,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          water,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: scheme.onSurfaceVariant),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.bolt_rounded,
+                              size: 14,
+                              color: billColors.elec,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              elec,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: scheme.onSurfaceVariant),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Icon(
+                              Icons.water_drop_rounded,
+                              size: 14,
+                              color: billColors.water,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              water,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: scheme.onSurfaceVariant),
+                            ),
+                          ],
                         ),
                       ],
                     ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        totalKhr,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      Text(
+                        totalUsd,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (onDelete != null) ...[
+                    const SizedBox(width: AppSpacing.xs),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded),
+                      tooltip: AppLocalizations.of(context).delete,
+                      style: IconButton.styleFrom(
+                        foregroundColor: scheme.error,
+                      ),
+                      onPressed: onDelete,
+                    ),
                   ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    totalKhr,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                  Text(
-                    totalUsd,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
                 ],
               ),
-              if (onDelete != null) ...[
-                const SizedBox(width: AppSpacing.xs),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded),
-                  tooltip: AppLocalizations.of(context).delete,
-                  style: IconButton.styleFrom(
-                    foregroundColor: scheme.error,
+              if (hasDates) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: 6,
                   ),
-                  onPressed: onDelete,
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.date_range_rounded,
+                        size: 14,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        DateFormat.MMMd(locale).format(prevDate!),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 12,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                      Text(
+                        DateFormat.MMMd(locale).format(currDate!),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: (isMonthComplete ? billColors.success : billColors.warning)
+                              .withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(AppRadius.xs),
+                        ),
+                        child: Text(
+                          '${daysSpan ?? 0}d',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: isMonthComplete ? billColors.success : billColors.warning,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        isMonthComplete
+                            ? Icons.check_circle_rounded
+                            : Icons.pending_rounded,
+                        size: 14,
+                        color: isMonthComplete ? billColors.success : billColors.warning,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ],

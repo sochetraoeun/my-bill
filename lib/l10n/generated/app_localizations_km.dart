@@ -426,6 +426,95 @@ class AppLocalizationsKm extends AppLocalizations {
   String get confirm => 'យល់ព្រម';
 
   @override
+  String get fieldCollectedAt => 'កាលបរិច្ឆេទ និងម៉ោងប្រមូល';
+
+  @override
+  String get fieldPrevDate => 'កាល.មុន';
+
+  @override
+  String get fieldCurrDate => 'កាល.ថ្មី';
+
+  @override
+  String daysSpanLabel(int days) {
+    return '$days ថ្ងៃ';
+  }
+
+  @override
+  String monthNotComplete(int daysNeeded) {
+    return 'មិនទាន់គ្រប់មួយខែ — ត្រូវការ $daysNeeded ថ្ងៃទៀត';
+  }
+
+  @override
+  String get estimateButton => 'ប៉ាន់ស្មាន';
+
+  @override
+  String get estimateTitle => 'ការប៉ាន់ស្មានប្រចាំខែ';
+
+  @override
+  String estimateBadge(int actual, int target) {
+    return '$actualថ្ងៃ → $targetថ្ងៃ';
+  }
+
+  @override
+  String get estimateReason => 'ហេតុអ្វីបានជាប៉ាន់ស្មាន?';
+
+  @override
+  String estimateExplanation(int actual, int target) {
+    return 'បានប្រមូលតែ $actual ថ្ងៃ ប៉ុន្តែខែវិក្កយបត្រពេញមួយមាន $target ថ្ងៃ។ ការប៉ាន់ស្មានគណនាតាមសមាមាត្រ៖ (ការប្រើប្រាស់ពិត ÷ $actual ថ្ងៃ) × $target ថ្ងៃ។';
+  }
+
+  @override
+  String get estimateDailyRate => 'មធ្យមភាគប្រចាំថ្ងៃ';
+
+  @override
+  String get perDay => 'ថ្ងៃ';
+
+  @override
+  String estimateProjected(int days) {
+    return 'ព្យាករណ៍សម្រាប់ $days ថ្ងៃ';
+  }
+
+  @override
+  String get estimateTotal => 'សរុបប៉ាន់ស្មាន';
+
+  @override
+  String get monthProgressTitle => 'វឌ្ឍនភាពប្រចាំខែ';
+
+  @override
+  String get monthComplete => 'រួចរាល់';
+
+  @override
+  String get monthIncomplete => 'កំពុងដំណើរការ';
+
+  @override
+  String monthProgressRooms(int reported, int total) {
+    return 'បានប្រមូល $reported ក្នុង $total បន្ទប់';
+  }
+
+  @override
+  String get monthAllCollected => 'បានប្រមូលបន្ទប់ទាំងអស់សម្រាប់ខែនេះ!';
+
+  @override
+  String monthEstimatedCompletion(String duration) {
+    return 'រយៈពេលប៉ាន់ស្មានដែលនៅសល់: ~$duration';
+  }
+
+  @override
+  String durationDays(int count) {
+    return '$count ថ្ងៃ';
+  }
+
+  @override
+  String durationHours(int count) {
+    return '$count ម៉ោង';
+  }
+
+  @override
+  String durationMinutes(int count) {
+    return '$count នាទី';
+  }
+
+  @override
   String get unitKwh => 'kWh';
 
   @override

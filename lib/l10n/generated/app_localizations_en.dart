@@ -428,6 +428,119 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirm => 'Confirm';
 
   @override
+  String get fieldCollectedAt => 'Collection Date & Time';
+
+  @override
+  String get fieldPrevDate => 'Prev. date';
+
+  @override
+  String get fieldCurrDate => 'Curr. date';
+
+  @override
+  String daysSpanLabel(int days) {
+    return '$days days';
+  }
+
+  @override
+  String monthNotComplete(int daysNeeded) {
+    String _temp0 = intl.Intl.pluralLogic(
+      daysNeeded,
+      locale: localeName,
+      other: 'days',
+      one: 'day',
+    );
+    return 'Not a full month yet — $daysNeeded more $_temp0 needed';
+  }
+
+  @override
+  String get estimateButton => 'Estimate';
+
+  @override
+  String get estimateTitle => 'Monthly Estimate';
+
+  @override
+  String estimateBadge(int actual, int target) {
+    return '${actual}d → ${target}d';
+  }
+
+  @override
+  String get estimateReason => 'WHY ESTIMATE?';
+
+  @override
+  String estimateExplanation(int actual, int target) {
+    return 'Only $actual days of data were collected, but a full billing month is $target days. The estimate projects usage proportionally: (actual usage ÷ $actual days) × $target days.';
+  }
+
+  @override
+  String get estimateDailyRate => 'DAILY AVERAGE';
+
+  @override
+  String get perDay => 'day';
+
+  @override
+  String estimateProjected(int days) {
+    return 'PROJECTED FOR $days DAYS';
+  }
+
+  @override
+  String get estimateTotal => 'Est. Total';
+
+  @override
+  String get monthProgressTitle => 'Month Progress';
+
+  @override
+  String get monthComplete => 'Complete';
+
+  @override
+  String get monthIncomplete => 'In Progress';
+
+  @override
+  String monthProgressRooms(int reported, int total) {
+    return '$reported of $total rooms collected';
+  }
+
+  @override
+  String get monthAllCollected => 'All rooms collected for this month!';
+
+  @override
+  String monthEstimatedCompletion(String duration) {
+    return 'Estimated completion: ~$duration';
+  }
+
+  @override
+  String durationDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'days',
+      one: 'day',
+    );
+    return '$count $_temp0';
+  }
+
+  @override
+  String durationHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'hours',
+      one: 'hour',
+    );
+    return '$count $_temp0';
+  }
+
+  @override
+  String durationMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'minutes',
+      one: 'minute',
+    );
+    return '$count $_temp0';
+  }
+
+  @override
   String get unitKwh => 'kWh';
 
   @override

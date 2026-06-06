@@ -165,6 +165,69 @@
   "settingsResetConfirm": "លុបការអានទាំងអស់? មិនអាចត្រឡប់វិញបានទេ។",
   "confirm": "យល់ព្រម",
 
+  "fieldCollectedAt": "កាលបរិច្ឆេទ និងម៉ោងប្រមូល",
+  "fieldPrevDate": "កាល.មុន",
+  "fieldCurrDate": "កាល.ថ្មី",
+  "daysSpanLabel": "{days} ថ្ងៃ",
+  "@daysSpanLabel": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "monthNotComplete": "មិនទាន់គ្រប់មួយខែ — ត្រូវការ {daysNeeded} ថ្ងៃទៀត",
+  "@monthNotComplete": {
+    "placeholders": { "daysNeeded": { "type": "int" } }
+  },
+  "estimateButton": "ប៉ាន់ស្មាន",
+  "estimateTitle": "ការប៉ាន់ស្មានប្រចាំខែ",
+  "estimateBadge": "{actual}ថ្ងៃ → {target}ថ្ងៃ",
+  "@estimateBadge": {
+    "placeholders": {
+      "actual": { "type": "int" },
+      "target": { "type": "int" }
+    }
+  },
+  "estimateReason": "ហេតុអ្វីបានជាប៉ាន់ស្មាន?",
+  "estimateExplanation": "បានប្រមូលតែ {actual} ថ្ងៃ ប៉ុន្តែខែវិក្កយបត្រពេញមួយមាន {target} ថ្ងៃ។ ការប៉ាន់ស្មានគណនាតាមសមាមាត្រ៖ (ការប្រើប្រាស់ពិត ÷ {actual} ថ្ងៃ) × {target} ថ្ងៃ។",
+  "@estimateExplanation": {
+    "placeholders": {
+      "actual": { "type": "int" },
+      "target": { "type": "int" }
+    }
+  },
+  "estimateDailyRate": "មធ្យមភាគប្រចាំថ្ងៃ",
+  "perDay": "ថ្ងៃ",
+  "estimateProjected": "ព្យាករណ៍សម្រាប់ {days} ថ្ងៃ",
+  "@estimateProjected": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "estimateTotal": "សរុបប៉ាន់ស្មាន",
+  "monthProgressTitle": "វឌ្ឍនភាពប្រចាំខែ",
+  "monthComplete": "រួចរាល់",
+  "monthIncomplete": "កំពុងដំណើរការ",
+  "monthProgressRooms": "បានប្រមូល {reported} ក្នុង {total} បន្ទប់",
+  "@monthProgressRooms": {
+    "placeholders": {
+      "reported": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "monthAllCollected": "បានប្រមូលបន្ទប់ទាំងអស់សម្រាប់ខែនេះ!",
+  "monthEstimatedCompletion": "រយៈពេលប៉ាន់ស្មានដែលនៅសល់: ~{duration}",
+  "@monthEstimatedCompletion": {
+    "placeholders": { "duration": { "type": "String" } }
+  },
+  "durationDays": "{count} ថ្ងៃ",
+  "@durationDays": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "durationHours": "{count} ម៉ោង",
+  "@durationHours": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "durationMinutes": "{count} នាទី",
+  "@durationMinutes": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
   "unitKwh": "kWh",
   "unitM3": "m³",
   "currencyKhr": "៛",

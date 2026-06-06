@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../controllers/readings_controller.dart';
 import '../../controllers/settings_controller.dart';
@@ -234,6 +235,11 @@ class _HistoryPageState extends State<HistoryPage> {
                           water: formatM3(b.waterUsageM3),
                           totalKhr: formatKhr(b.totalKhr),
                           totalUsd: formatUsd(b.totalUsd),
+                          prevDate: r.prevElecDate,
+                          currDate: r.currElecDate,
+                          daysSpan: r.elecDaysSpan,
+                          isMonthComplete: r.isMonthComplete,
+                          locale: locale,
                           onTap: () =>
                               Get.to(() => ReadingDetailPage(reading: r)),
                           onLongPress: () => _confirmDelete(context, r),
@@ -348,6 +354,11 @@ class _HistoryTile extends StatelessWidget {
     required this.water,
     required this.totalKhr,
     required this.totalUsd,
+    this.prevDate,
+    this.currDate,
+    this.daysSpan,
+    this.isMonthComplete = true,
+    this.locale,
     this.onTap,
     this.onLongPress,
   });
@@ -358,6 +369,11 @@ class _HistoryTile extends StatelessWidget {
   final String water;
   final String totalKhr;
   final String totalUsd;
+  final DateTime? prevDate;
+  final DateTime? currDate;
+  final int? daysSpan;
+  final bool isMonthComplete;
+  final String? locale;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
@@ -365,6 +381,8 @@ class _HistoryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final billColors = Theme.of(context).extension<BillColors>()!;
+    final hasDates = prevDate != null && currDate != null;
+
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.md),
@@ -372,88 +390,188 @@ class _HistoryTile extends StatelessWidget {
         onLongPress: onLongPress,
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: scheme.primary.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                alignment: Alignment.center,
-                child: Icon(
-                  Icons.meeting_room_rounded,
-                  color: scheme.primary,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      roomName,
-                      style: Theme.of(context).textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: scheme.primary.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      monthLabel,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.meeting_room_rounded,
+                      color: scheme.primary,
+                      size: 22,
                     ),
-                    const SizedBox(height: 4),
-                    Row(
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.bolt_rounded,
-                          size: 14,
-                          color: billColors.elec,
-                        ),
-                        const SizedBox(width: 2),
                         Text(
-                          elec,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: scheme.onSurfaceVariant),
+                          roomName,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Icon(
-                          Icons.water_drop_rounded,
-                          size: 14,
-                          color: billColors.water,
-                        ),
-                        const SizedBox(width: 2),
+                        const SizedBox(height: 2),
                         Text(
-                          water,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: scheme.onSurfaceVariant),
+                          monthLabel,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.bolt_rounded,
+                              size: 14,
+                              color: billColors.elec,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              elec,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: scheme.onSurfaceVariant),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Icon(
+                              Icons.water_drop_rounded,
+                              size: 14,
+                              color: billColors.water,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              water,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: scheme.onSurfaceVariant),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    totalKhr,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.2,
-                    ),
                   ),
-                  Text(
-                    totalUsd,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        totalKhr,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      Text(
+                        totalUsd,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
+              if (hasDates) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: (isMonthComplete
+                            ? billColors.success
+                            : billColors.warning)
+                        .withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
+                    border: Border.all(
+                      color: (isMonthComplete
+                              ? billColors.success
+                              : billColors.warning)
+                          .withValues(alpha: 0.25),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.date_range_rounded,
+                        size: 14,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        DateFormat.MMMd(locale).format(prevDate!),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 12,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                      Text(
+                        DateFormat.MMMd(locale).format(currDate!),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: (isMonthComplete
+                                  ? billColors.success
+                                  : billColors.warning)
+                              .withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(AppRadius.xs),
+                        ),
+                        child: Text(
+                          '${daysSpan ?? 0}d',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: isMonthComplete
+                                ? billColors.success
+                                : billColors.warning,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        isMonthComplete
+                            ? Icons.check_circle_rounded
+                            : Icons.pending_rounded,
+                        size: 14,
+                        color: isMonthComplete
+                            ? billColors.success
+                            : billColors.warning,
+                      ),
+                      if (!isMonthComplete) ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          AppLocalizations.of(context).monthIncomplete,
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: billColors.warning,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),

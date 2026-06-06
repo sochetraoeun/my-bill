@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../controllers/settings_controller.dart';
 import '../../core/formatters.dart';
@@ -80,6 +81,34 @@ class ReadingDetailPage extends StatelessWidget {
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(color: scheme.onSurfaceVariant),
                         ),
+                        if (reading.prevElecDate != null && reading.currElecDate != null) ...[
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Icon(Icons.bolt_rounded, size: 13, color: billColors.elec),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${DateFormat.yMMMd(locale).format(reading.prevElecDate!)} → ${DateFormat.yMMMd(locale).format(reading.currElecDate!)}',
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: scheme.onSurfaceVariant),
+                              ),
+                            ],
+                          ),
+                        ],
+                        if (reading.prevWaterDate != null && reading.currWaterDate != null) ...[
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Icon(Icons.water_drop_rounded, size: 13, color: billColors.water),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${DateFormat.yMMMd(locale).format(reading.prevWaterDate!)} → ${DateFormat.yMMMd(locale).format(reading.currWaterDate!)}',
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: scheme.onSurfaceVariant),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),

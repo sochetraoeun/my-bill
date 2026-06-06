@@ -186,6 +186,69 @@
   "settingsResetConfirm": "Delete every reading? This cannot be undone.",
   "confirm": "Confirm",
 
+  "fieldCollectedAt": "Collection Date & Time",
+  "fieldPrevDate": "Prev. date",
+  "fieldCurrDate": "Curr. date",
+  "daysSpanLabel": "{days} days",
+  "@daysSpanLabel": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "monthNotComplete": "Not a full month yet — {daysNeeded} more {daysNeeded, plural, =1{day} other{days}} needed",
+  "@monthNotComplete": {
+    "placeholders": { "daysNeeded": { "type": "int" } }
+  },
+  "estimateButton": "Estimate",
+  "estimateTitle": "Monthly Estimate",
+  "estimateBadge": "{actual}d → {target}d",
+  "@estimateBadge": {
+    "placeholders": {
+      "actual": { "type": "int" },
+      "target": { "type": "int" }
+    }
+  },
+  "estimateReason": "WHY ESTIMATE?",
+  "estimateExplanation": "Only {actual} days of data were collected, but a full billing month is {target} days. The estimate projects usage proportionally: (actual usage ÷ {actual} days) × {target} days.",
+  "@estimateExplanation": {
+    "placeholders": {
+      "actual": { "type": "int" },
+      "target": { "type": "int" }
+    }
+  },
+  "estimateDailyRate": "DAILY AVERAGE",
+  "perDay": "day",
+  "estimateProjected": "PROJECTED FOR {days} DAYS",
+  "@estimateProjected": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "estimateTotal": "Est. Total",
+  "monthProgressTitle": "Month Progress",
+  "monthComplete": "Complete",
+  "monthIncomplete": "In Progress",
+  "monthProgressRooms": "{reported} of {total} rooms collected",
+  "@monthProgressRooms": {
+    "placeholders": {
+      "reported": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "monthAllCollected": "All rooms collected for this month!",
+  "monthEstimatedCompletion": "Estimated completion: ~{duration}",
+  "@monthEstimatedCompletion": {
+    "placeholders": { "duration": { "type": "String" } }
+  },
+  "durationDays": "{count} {count, plural, =1{day} other{days}}",
+  "@durationDays": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "durationHours": "{count} {count, plural, =1{hour} other{hours}}",
+  "@durationHours": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "durationMinutes": "{count} {count, plural, =1{minute} other{minutes}}",
+  "@durationMinutes": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
   "unitKwh": "kWh",
   "unitM3": "m³",
   "currencyKhr": "៛",

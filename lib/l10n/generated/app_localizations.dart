@@ -838,6 +838,144 @@ abstract class AppLocalizations {
   /// **'Confirm'**
   String get confirm;
 
+  /// No description provided for @fieldCollectedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Collection Date & Time'**
+  String get fieldCollectedAt;
+
+  /// No description provided for @fieldPrevDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Prev. date'**
+  String get fieldPrevDate;
+
+  /// No description provided for @fieldCurrDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Curr. date'**
+  String get fieldCurrDate;
+
+  /// No description provided for @daysSpanLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days'**
+  String daysSpanLabel(int days);
+
+  /// No description provided for @monthNotComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Not a full month yet — {daysNeeded} more {daysNeeded, plural, =1{day} other{days}} needed'**
+  String monthNotComplete(int daysNeeded);
+
+  /// No description provided for @estimateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimate'**
+  String get estimateButton;
+
+  /// No description provided for @estimateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly Estimate'**
+  String get estimateTitle;
+
+  /// No description provided for @estimateBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'{actual}d → {target}d'**
+  String estimateBadge(int actual, int target);
+
+  /// No description provided for @estimateReason.
+  ///
+  /// In en, this message translates to:
+  /// **'WHY ESTIMATE?'**
+  String get estimateReason;
+
+  /// No description provided for @estimateExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Only {actual} days of data were collected, but a full billing month is {target} days. The estimate projects usage proportionally: (actual usage ÷ {actual} days) × {target} days.'**
+  String estimateExplanation(int actual, int target);
+
+  /// No description provided for @estimateDailyRate.
+  ///
+  /// In en, this message translates to:
+  /// **'DAILY AVERAGE'**
+  String get estimateDailyRate;
+
+  /// No description provided for @perDay.
+  ///
+  /// In en, this message translates to:
+  /// **'day'**
+  String get perDay;
+
+  /// No description provided for @estimateProjected.
+  ///
+  /// In en, this message translates to:
+  /// **'PROJECTED FOR {days} DAYS'**
+  String estimateProjected(int days);
+
+  /// No description provided for @estimateTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Est. Total'**
+  String get estimateTotal;
+
+  /// No description provided for @monthProgressTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Month Progress'**
+  String get monthProgressTitle;
+
+  /// No description provided for @monthComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete'**
+  String get monthComplete;
+
+  /// No description provided for @monthIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'In Progress'**
+  String get monthIncomplete;
+
+  /// No description provided for @monthProgressRooms.
+  ///
+  /// In en, this message translates to:
+  /// **'{reported} of {total} rooms collected'**
+  String monthProgressRooms(int reported, int total);
+
+  /// No description provided for @monthAllCollected.
+  ///
+  /// In en, this message translates to:
+  /// **'All rooms collected for this month!'**
+  String get monthAllCollected;
+
+  /// No description provided for @monthEstimatedCompletion.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated completion: ~{duration}'**
+  String monthEstimatedCompletion(String duration);
+
+  /// No description provided for @durationDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} {count, plural, =1{day} other{days}}'**
+  String durationDays(int count);
+
+  /// No description provided for @durationHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} {count, plural, =1{hour} other{hours}}'**
+  String durationHours(int count);
+
+  /// No description provided for @durationMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} {count, plural, =1{minute} other{minutes}}'**
+  String durationMinutes(int count);
+
   /// No description provided for @unitKwh.
   ///
   /// In en, this message translates to:
