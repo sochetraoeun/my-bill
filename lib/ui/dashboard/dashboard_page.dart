@@ -208,12 +208,75 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
+  Future<String?> _pickExportMonth(BuildContext context) async {
+    final readings = Get.find<ReadingsController>();
+    final settings = Get.find<SettingsController>();
+    final locale = settings.settings.localeCode;
+    final months = readings.monthKeys;
+    if (months.isEmpty) return null;
+
+    return showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) {
+        final scheme = Theme.of(ctx).colorScheme;
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.sm,
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_month_rounded,
+                        size: 20, color: scheme.primary),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      AppLocalizations.of(ctx).fieldMonth,
+                      style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(ctx).size.height * 0.4,
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: months.length,
+                  itemBuilder: (ctx, i) {
+                    final key = months[i];
+                    return ListTile(
+                      leading: const Icon(Icons.date_range_rounded, size: 20),
+                      title: Text(
+                        formatYearMonthHuman(parseYearMonthKey(key), locale),
+                      ),
+                      onTap: () => Navigator.pop(ctx, key),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _exportAllPdf(BuildContext context) async {
     final t = AppLocalizations.of(context);
     final readings = Get.find<ReadingsController>();
     final settings = Get.find<SettingsController>();
-    final dash = Get.find<DashboardController>();
-    final key = dash.currentMonthTotals.key;
+
+    final key = await _pickExportMonth(context);
+    if (key == null) return;
+    if (!context.mounted) return;
+
     final list = readings.forMonthKey(key);
     if (list.isEmpty) {
       AppSnack.info(context, t.noData);
@@ -244,20 +307,26 @@ class DashboardPage extends StatelessWidget {
     final t = AppLocalizations.of(context);
     final readings = Get.find<ReadingsController>();
     final settings = Get.find<SettingsController>();
-    if (readings.readings.isEmpty) {
-      AppSnack.info(context, t.emptyHistory);
+
+    final key = await _pickExportMonth(context);
+    if (key == null) return;
+    if (!context.mounted) return;
+
+    final list = readings.forMonthKey(key);
+    if (list.isEmpty) {
+      AppSnack.info(context, t.noData);
       return;
     }
     try {
       final workbook = ExcelService.instance.build(
-        readings: readings.readings,
+        readings: list,
         rooms: settings.settings.rooms,
         settings: settings.settings,
         localeCode: settings.settings.localeCode,
       );
       await ExcelService.instance.shareWorkbook(
         workbook,
-        fileName: 'my_bill_history.xlsx',
+        fileName: 'my_bill_$key.xlsx',
       );
       if (!context.mounted) return;
       AppSnack.success(
