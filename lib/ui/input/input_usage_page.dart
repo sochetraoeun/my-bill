@@ -147,6 +147,9 @@ class _InputUsagePageState extends State<InputUsagePage> {
     } else {
       _prevElec.text = formatMeterInputText(pred.currElec);
       _prevWater.text = formatMeterInputText(pred.currWater);
+      if (pred.currElecDate != null) {
+        _prevDate = pred.currElecDate!;
+      }
     }
 
     final succ =

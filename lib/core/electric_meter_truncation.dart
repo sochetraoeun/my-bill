@@ -90,6 +90,13 @@ ResolvedElectricInputs resolveTruncatedElectricInputs({
     );
   }
 
+  // When prev was auto-filled from history it matches predecessorClosing
+  // exactly — no truncation occurred, so use raw values directly.
+  if (predecessorClosing != null &&
+      (prevInput - predecessorClosing).abs() < 0.01) {
+    return ResolvedElectricInputs.raw(prevInput, currInput);
+  }
+
   if (predecessorClosing == null || naiveDelta <= _maxReasonableNaiveDeltaKwh) {
     return ResolvedElectricInputs.raw(prevInput, currInput);
   }
