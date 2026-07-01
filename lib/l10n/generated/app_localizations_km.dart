@@ -118,6 +118,9 @@ class AppLocalizationsKm extends AppLocalizations {
   String get previewBill => 'មើលជាមុនវិក្កយបត្រ';
 
   @override
+  String get billRoomPrice => 'តម្លៃបន្ទប់';
+
+  @override
   String get labelUsage => 'ប្រើប្រាស់';
 
   @override
@@ -388,6 +391,15 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get settingsRoomNames => 'ឈ្មោះបន្ទប់';
+
+  @override
+  String get settingsRooms => 'បន្ទប់';
+
+  @override
+  String get settingsRoomPrice => 'តម្លៃបន្ទប់ (ដុល្លារ)';
+
+  @override
+  String get roomPriceUpdated => 'បានធ្វើបច្ចុប្បន្នភាពតម្លៃបន្ទប់។';
 
   @override
   String get addRoom => 'បន្ថែមបន្ទប់';

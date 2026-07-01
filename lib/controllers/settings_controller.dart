@@ -135,6 +135,21 @@ class SettingsController extends GetxController {
     await _service.save(_settings.value);
   }
 
+  Future<void> setRoomPrice(String id, double priceUsd) async {
+    final normalized = priceUsd < 0 ? 0.0 : priceUsd;
+    final current = _settings.value.rooms;
+    final target = current.firstWhere(
+      (r) => r.id == id,
+      orElse: () => Room(id: id, name: id),
+    );
+    if ((target.priceUsd - normalized).abs() < 1e-9) return;
+    final updated = current
+        .map((r) => r.id == id ? r.copyWith(priceUsd: normalized) : r)
+        .toList();
+    _settings.value = _settings.value.copyWith(rooms: updated);
+    await _service.save(_settings.value);
+  }
+
   Future<void> addRoom(String name) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) {

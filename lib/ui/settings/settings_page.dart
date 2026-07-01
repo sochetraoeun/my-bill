@@ -107,7 +107,7 @@ class SettingsPage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.xl),
-            _SectionLabel(text: t.settingsRoomNames),
+            _SectionLabel(text: t.settingsRooms),
             const SizedBox(height: AppSpacing.sm),
             _SettingsCard(
               children: [
@@ -115,6 +115,7 @@ class SettingsPage extends StatelessWidget {
                   if (i != 0) const _ThinDivider(),
                   _RoomTile(
                     name: s.rooms[i].name,
+                    priceUsd: s.rooms[i].priceUsd,
                     canDelete: s.rooms.length > 1,
                     onTap: () =>
                         _renameRoom(context, s.rooms[i].id, s.rooms[i].name),
@@ -123,6 +124,11 @@ class SettingsPage extends StatelessWidget {
                       s.rooms[i].id,
                       s.rooms[i].name,
                     ),
+                    onPriceChanged: (v) async {
+                      await settings.setRoomPrice(s.rooms[i].id, v);
+                      if (!context.mounted) return;
+                      AppSnack.success(context, t.roomPriceUpdated);
+                    },
                   ),
                 ],
               ],
@@ -737,67 +743,187 @@ class _RateFieldState extends State<_RateField> {
 class _RoomTile extends StatelessWidget {
   const _RoomTile({
     required this.name,
+    required this.priceUsd,
     required this.onTap,
     required this.canDelete,
     required this.onDelete,
+    required this.onPriceChanged,
   });
 
   final String name;
+  final double priceUsd;
   final VoidCallback onTap;
   final bool canDelete;
   final VoidCallback onDelete;
+  final Future<void> Function(double) onPriceChanged;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final t = AppLocalizations.of(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.md,
-                AppSpacing.sm,
-                AppSpacing.md,
-              ),
-              child: Row(
-                children: [
-                  _LeadingIcon(
-                    icon: Icons.meeting_room_outlined,
-                    color: scheme.primary,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                    AppSpacing.sm,
                   ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Text(
-                      name,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
+                  child: Row(
+                    children: [
+                      _LeadingIcon(
+                        icon: Icons.meeting_room_outlined,
+                        color: scheme.primary,
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Text(
+                          name,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                      Icon(
+                        Icons.edit_outlined,
+                        size: 18,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ],
                   ),
-                  Icon(
-                    Icons.edit_outlined,
-                    size: 18,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ],
+                ),
               ),
             ),
+            if (canDelete)
+              Padding(
+                padding: const EdgeInsets.only(right: AppSpacing.xs),
+                child: IconButton(
+                  tooltip: t.deleteRoom,
+                  onPressed: onDelete,
+                  icon: Icon(Icons.delete_outline_rounded, color: scheme.error),
+                ),
+              ),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            AppSpacing.md,
+          ),
+          child: Row(
+            children: [
+              const SizedBox(width: 40 + AppSpacing.md),
+              Expanded(
+                child: _RoomPriceField(
+                  key: ValueKey<double>(priceUsd),
+                  initialValue: priceUsd,
+                  label: t.settingsRoomPrice,
+                  onChanged: onPriceChanged,
+                ),
+              ),
+            ],
           ),
         ),
-        if (canDelete)
-          Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.xs),
-            child: IconButton(
-              tooltip: t.deleteRoom,
-              onPressed: onDelete,
-              icon: Icon(Icons.delete_outline_rounded, color: scheme.error),
-            ),
-          ),
       ],
+    );
+  }
+}
+
+class _RoomPriceField extends StatefulWidget {
+  const _RoomPriceField({
+    super.key,
+    required this.initialValue,
+    required this.label,
+    required this.onChanged,
+  });
+
+  final double initialValue;
+  final String label;
+  final Future<void> Function(double) onChanged;
+
+  @override
+  State<_RoomPriceField> createState() => _RoomPriceFieldState();
+}
+
+class _RoomPriceFieldState extends State<_RoomPriceField> {
+  late final TextEditingController _ctrl;
+  late final FocusNode _focusNode;
+
+  String _format(double v) => v == v.roundToDouble()
+      ? v.toStringAsFixed(0)
+      : v.toString();
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+    _ctrl = TextEditingController(text: _format(widget.initialValue));
+  }
+
+  @override
+  void didUpdateWidget(covariant _RoomPriceField old) {
+    super.didUpdateWidget(old);
+    if (old.initialValue == widget.initialValue) return;
+    if (_focusNode.hasFocus) return;
+    _ctrl.text = _format(widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _submit(BuildContext context, String raw) {
+    final text = raw.trim().replaceAll(',', '');
+    if (text.isEmpty) {
+      _ctrl.text = _format(widget.initialValue);
+      return;
+    }
+    final parsed = double.tryParse(text);
+    if (parsed == null) {
+      AppSnack.error(context, AppLocalizations.of(context).invalidNumber);
+      _ctrl.text = _format(widget.initialValue);
+      return;
+    }
+    widget.onChanged(parsed);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return TextField(
+      controller: _ctrl,
+      focusNode: _focusNode,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      decoration: InputDecoration(
+        labelText: widget.label,
+        prefixIcon: Icon(Icons.sell_outlined, size: 18, color: scheme.primary),
+        prefixIconConstraints: const BoxConstraints(minWidth: 28),
+        prefixText: r'$ ',
+        filled: false,
+        border: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        contentPadding: EdgeInsets.zero,
+        isDense: true,
+      ),
+      style: Theme.of(context).textTheme.titleMedium,
+      onSubmitted: (v) => _submit(context, v),
+      onTapOutside: (_) {
+        _submit(context, _ctrl.text);
+        FocusScope.of(context).unfocus();
+      },
     );
   }
 }

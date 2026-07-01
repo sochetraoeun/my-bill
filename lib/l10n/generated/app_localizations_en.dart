@@ -118,6 +118,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get previewBill => 'Bill Preview';
 
   @override
+  String get billRoomPrice => 'Room price';
+
+  @override
   String get labelUsage => 'Usage';
 
   @override
@@ -389,6 +392,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsRoomNames => 'Room names';
+
+  @override
+  String get settingsRooms => 'Rooms';
+
+  @override
+  String get settingsRoomPrice => 'Room price (USD)';
+
+  @override
+  String get roomPriceUpdated => 'Room price updated.';
 
   @override
   String get addRoom => 'Add room';

@@ -20,6 +20,7 @@ class _L {
   final String days;
   final String electricity;
   final String water;
+  final String roomPrice;
   final String prevMeter;
   final String currMeter;
   final String usage;
@@ -31,6 +32,8 @@ class _L {
   final String complete;
   final String description;
   final String qty;
+  final String scanToPay;
+  final String amountDue;
 
   const _L({
     required this.invoice,
@@ -41,6 +44,7 @@ class _L {
     required this.days,
     required this.electricity,
     required this.water,
+    required this.roomPrice,
     required this.prevMeter,
     required this.currMeter,
     required this.usage,
@@ -52,6 +56,8 @@ class _L {
     required this.complete,
     required this.description,
     required this.qty,
+    required this.scanToPay,
+    required this.amountDue,
   });
 
   factory _L.of(String locale) {
@@ -65,6 +71,7 @@ class _L {
         days: 'ថ្ងៃ',
         electricity: 'អគ្គិសនី',
         water: 'ទឹក',
+        roomPrice: 'តម្លៃបន្ទប់',
         prevMeter: 'ម៉ែត្រមុន',
         currMeter: 'ម៉ែត្រថ្មី',
         usage: 'ប្រើប្រាស់',
@@ -76,6 +83,8 @@ class _L {
         complete: 'គ្រប់មួយខែ',
         description: 'បរិយាយ',
         qty: 'បរិមាណ',
+        scanToPay: 'ស្កេនដើម្បីបង់ប្រាក់ (KHQR)',
+        amountDue: 'ចំនួនត្រូវបង់',
       );
     }
     return const _L(
@@ -87,6 +96,7 @@ class _L {
       days: 'days',
       electricity: 'Electricity',
       water: 'Water',
+      roomPrice: 'Room Price',
       prevMeter: 'Prev',
       currMeter: 'Curr',
       usage: 'Usage',
@@ -98,6 +108,8 @@ class _L {
       complete: 'Complete',
       description: 'Description',
       qty: 'Qty',
+      scanToPay: 'Scan to pay (KHQR)',
+      amountDue: 'Amount Due',
     );
   }
 }
@@ -107,6 +119,7 @@ class PdfService {
   static final PdfService instance = PdfService._();
 
   pw.Font? _khmerFont;
+  pw.MemoryImage? _paymentQrImage;
 
   Future<pw.Font> _loadKhmerFont() async {
     if (_khmerFont != null) return _khmerFont!;
@@ -122,6 +135,13 @@ class PdfService {
     return pw.ThemeData.withFont(base: font, bold: font);
   }
 
+  Future<pw.MemoryImage> _loadPaymentQrImage() async {
+    if (_paymentQrImage != null) return _paymentQrImage!;
+    final bytes = await rootBundle.load('assets/images/payment_qr.png');
+    _paymentQrImage = pw.MemoryImage(bytes.buffer.asUint8List());
+    return _paymentQrImage!;
+  }
+
   Future<pw.Document> buildInvoice({
     required Room room,
     required Reading reading,
@@ -129,9 +149,10 @@ class PdfService {
     required String localeCode,
   }) async {
     final theme = await _theme();
+    final qrImage = await _loadPaymentQrImage();
     final doc = pw.Document(theme: theme);
     final b = computeBill(reading, settings);
-    doc.addPage(_page(room, reading, settings, b, localeCode));
+    doc.addPage(_page(room, reading, settings, b, localeCode, qrImage));
     return doc;
   }
 
@@ -142,11 +163,12 @@ class PdfService {
     required String localeCode,
   }) async {
     final theme = await _theme();
+    final qrImage = await _loadPaymentQrImage();
     final doc = pw.Document(theme: theme);
     for (final r in readings) {
       final room = roomsById[r.roomId] ?? Room(id: r.roomId, name: r.roomId);
       final b = computeBill(r, settings);
-      doc.addPage(_page(room, r, settings, b, localeCode));
+      doc.addPage(_page(room, r, settings, b, localeCode, qrImage));
     }
     return doc;
   }
@@ -157,6 +179,7 @@ class PdfService {
     AppSettings s,
     BillBreakdown b,
     String locale,
+    pw.MemoryImage qrImage,
   ) {
     final l = _L.of(locale);
     final dateFmt = DateFormat('dd/MM/yyyy', locale);
@@ -165,6 +188,13 @@ class PdfService {
     final hasDates = prevDate != null && currDate != null;
     final daysSpan = hasDates ? currDate.difference(prevDate).inDays : null;
     final khrPerUsd = s.khrPerUsd;
+    final roomPriceUsd = room.priceUsd;
+    final roomPriceKhr = roomPriceUsd * khrPerUsd;
+    // Utilities are metered in KHR; convert them to dollars and add the room
+    // price (already in USD) so the invoice total is calculated in dollars.
+    final utilitiesUsd = khrPerUsd == 0 ? 0.0 : b.totalKhr / khrPerUsd;
+    final grandTotalUsd = utilitiesUsd + roomPriceUsd;
+    final grandTotalKhr = b.totalKhr + roomPriceKhr;
 
     return pw.Page(
       pageFormat: PdfPageFormat.a5,
@@ -183,12 +213,12 @@ class PdfService {
                     pw.Text(
                       l.invoice,
                       style: pw.TextStyle(
-                        fontSize: 28,
+                        fontSize: 24,
                         fontWeight: pw.FontWeight.bold,
                         color: PdfColors.blueGrey800,
                       ),
                     ),
-                    pw.SizedBox(height: 6),
+                    pw.SizedBox(height: 4),
                     pw.Text(
                       formatYearMonthHuman(r.month, locale),
                       style: const pw.TextStyle(
@@ -216,11 +246,11 @@ class PdfService {
               ),
             ],
           ),
-          pw.SizedBox(height: 20),
+          pw.SizedBox(height: 14),
 
           // ─── BILLING PERIOD ───
           pw.Container(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: pw.BoxDecoration(
               color: PdfColors.grey100,
               borderRadius: pw.BorderRadius.circular(6),
@@ -282,7 +312,7 @@ class PdfService {
               ],
             ),
           ),
-          pw.SizedBox(height: 18),
+          pw.SizedBox(height: 14),
 
           // ─── TABLE ───
           pw.Table(
@@ -316,7 +346,10 @@ class PdfService {
                   ),
                   _textCell('${_num(b.elecUsageKwh)} kWh', align: pw.TextAlign.center),
                   _textCell('${formatInt(s.elecRateKhrPerKwh)} KHR', align: pw.TextAlign.right),
-                  _textCell(_fmtKhr(b.elecAmountKhr), align: pw.TextAlign.right, bold: true),
+                  _amountCell(
+                    b.elecAmountKhr,
+                    khrPerUsd == 0 ? 0 : b.elecAmountKhr / khrPerUsd,
+                  ),
                 ],
               ),
               // Water row
@@ -328,16 +361,49 @@ class PdfService {
                   ),
                   _textCell('${_num(b.waterUsageM3)} m3', align: pw.TextAlign.center),
                   _textCell('${formatInt(s.waterRateKhrPerM3)} KHR', align: pw.TextAlign.right),
-                  _textCell(_fmtKhr(b.waterAmountKhr), align: pw.TextAlign.right, bold: true),
+                  _amountCell(
+                    b.waterAmountKhr,
+                    khrPerUsd == 0 ? 0 : b.waterAmountKhr / khrPerUsd,
+                  ),
                 ],
               ),
+              // Room price row
+              if (roomPriceUsd > 0)
+                pw.TableRow(
+                  children: [
+                    _bodyCell(l.roomPrice),
+                    _textCell('1', align: pw.TextAlign.center),
+                    _textCell(_fmtUsd(roomPriceUsd), align: pw.TextAlign.right),
+                    _amountCell(roomPriceKhr, roomPriceUsd),
+                  ],
+                ),
             ],
           ),
-          pw.SizedBox(height: 14),
+          pw.SizedBox(height: 10),
+
+          // ─── SUBTOTAL SUMMARY ───
+          // Shows the calculation clearly: utilities summed in KHR, converted
+          // to dollars, then combined with the room price (already in USD).
+          pw.Container(
+            padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            child: pw.Column(
+              children: [
+                _summaryRow(
+                  '${l.electricity} + ${l.water}',
+                  '${_fmtKhr(b.totalKhr)}  =  ${_fmtUsd(utilitiesUsd)}',
+                ),
+                if (roomPriceUsd > 0) ...[
+                  pw.SizedBox(height: 4),
+                  _summaryRow(l.roomPrice, _fmtUsd(roomPriceUsd)),
+                ],
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 8),
 
           // ─── TOTAL BOX ───
           pw.Container(
-            padding: const pw.EdgeInsets.all(14),
+            padding: const pw.EdgeInsets.all(12),
             decoration: pw.BoxDecoration(
               color: PdfColors.blueGrey800,
               borderRadius: pw.BorderRadius.circular(8),
@@ -357,18 +423,18 @@ class PdfService {
                   crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: [
                     pw.Text(
-                      _fmtKhr(b.totalKhr),
+                      _fmtUsd(grandTotalUsd),
                       style: pw.TextStyle(
-                        fontSize: 18,
+                        fontSize: 14,
                         fontWeight: pw.FontWeight.bold,
                         color: PdfColors.white,
                       ),
                     ),
                     pw.SizedBox(height: 2),
                     pw.Text(
-                      _fmtUsd(khrPerUsd == 0 ? 0 : b.totalKhr / khrPerUsd),
+                      _fmtKhr(grandTotalKhr),
                       style: const pw.TextStyle(
-                        fontSize: 10,
+                        fontSize: 14,
                         color: PdfColors.grey400,
                       ),
                     ),
@@ -377,17 +443,82 @@ class PdfService {
               ],
             ),
           ),
+          pw.SizedBox(height: 12),
 
-          pw.Spacer(),
-
-          // ─── FOOTER ───
-          pw.Divider(color: PdfColors.grey300, height: 20),
-          pw.Center(
-            child: pw.Text(
-              l.generatedBy,
-              style: const pw.TextStyle(
-                fontSize: 8,
-                color: PdfColors.grey500,
+          // ─── PAYMENT CARD ───
+          // The card fills the remaining page height and the QR is sized via an
+          // AspectRatio, so it is always as large as the leftover space allows
+          // and the invoice can never overflow onto a second page.
+          pw.Expanded(
+            child: pw.Container(
+              padding: const pw.EdgeInsets.all(12),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.grey100,
+                borderRadius: pw.BorderRadius.circular(10),
+                border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+              ),
+              child: pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                children: [
+                  pw.AspectRatio(
+                    aspectRatio: 1,
+                    child: pw.Container(
+                      padding: const pw.EdgeInsets.all(6),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.white,
+                        borderRadius: pw.BorderRadius.circular(8),
+                        border: pw.Border.all(
+                          color: PdfColors.grey300,
+                          width: 0.5,
+                        ),
+                      ),
+                      child: pw.Image(qrImage, fit: pw.BoxFit.contain),
+                    ),
+                  ),
+                  pw.SizedBox(width: 18),
+                  pw.Expanded(
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      mainAxisAlignment: pw.MainAxisAlignment.center,
+                      children: [
+                        pw.Text(
+                          l.scanToPay,
+                          style: pw.TextStyle(
+                            fontSize: 11,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.blueGrey800,
+                          ),
+                        ),
+                        pw.SizedBox(height: 10),
+                        pw.Text(
+                          l.amountDue,
+                          style: pw.TextStyle(
+                            fontSize: 8,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.blueGrey600,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        pw.SizedBox(height: 3),
+                        pw.Text(
+                          _fmtUsd(grandTotalUsd),
+                          style: pw.TextStyle(
+                            fontSize: 20,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.blueGrey900,
+                          ),
+                        ),
+                        pw.Text(
+                          _fmtKhr(grandTotalKhr),
+                          style: const pw.TextStyle(
+                            fontSize: 11,
+                            color: PdfColors.blueGrey500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -400,7 +531,7 @@ class PdfService {
 
   pw.Widget _hCell(String text, {pw.TextAlign align = pw.TextAlign.left}) {
     return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       child: pw.Text(
         text,
         textAlign: align,
@@ -415,7 +546,7 @@ class PdfService {
 
   pw.Widget _bodyCell(String title, {String? sub}) {
     return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
@@ -445,7 +576,7 @@ class PdfService {
     bool bold = false,
   }) {
     return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 9),
       child: pw.Text(
         text,
         textAlign: align,
@@ -455,6 +586,58 @@ class PdfService {
           color: PdfColors.blueGrey900,
         ),
       ),
+    );
+  }
+
+  pw.Widget _amountCell(num khr, num usd) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 9),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.end,
+        children: [
+          pw.Text(
+            _fmtKhr(khr),
+            textAlign: pw.TextAlign.right,
+            style: pw.TextStyle(
+              fontSize: 9,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.blueGrey900,
+            ),
+          ),
+          pw.SizedBox(height: 1),
+          pw.Text(
+            _fmtUsd(usd),
+            textAlign: pw.TextAlign.right,
+            style: const pw.TextStyle(
+              fontSize: 8,
+              color: PdfColors.blueGrey500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _summaryRow(String label, String value) {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      children: [
+        pw.Text(
+          label,
+          style: const pw.TextStyle(
+            fontSize: 9,
+            color: PdfColors.blueGrey600,
+          ),
+        ),
+        pw.Text(
+          value,
+          style: pw.TextStyle(
+            fontSize: 9,
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.blueGrey900,
+          ),
+        ),
+      ],
     );
   }
 

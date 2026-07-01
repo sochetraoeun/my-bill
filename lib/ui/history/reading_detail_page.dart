@@ -25,7 +25,12 @@ class ReadingDetailPage extends StatelessWidget {
     final bill = computeBill(reading, s);
     final billColors = Theme.of(context).extension<BillColors>()!;
     final scheme = Theme.of(context).colorScheme;
-    final roomName = settings.roomById(reading.roomId).name;
+    final room = settings.roomById(reading.roomId);
+    final roomName = room.name;
+    final roomPriceUsd = room.priceUsd;
+    final roomPriceKhr = roomPriceUsd * s.khrPerUsd;
+    final grandTotalKhr = bill.totalKhr + roomPriceKhr;
+    final grandTotalUsd = s.khrPerUsd > 0 ? grandTotalKhr / s.khrPerUsd : 0.0;
 
     return Scaffold(
       appBar: AppBar(
@@ -183,6 +188,17 @@ class ReadingDetailPage extends StatelessWidget {
                         '${formatM3(bill.waterUsageM3)} • ${formatInt(s.waterRateKhrPerM3)} ៛/${t.unitM3}',
                     amount: formatKhr(bill.waterAmountKhr),
                   ),
+                  if (roomPriceUsd > 0) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    _billBreakdownRow(
+                      context,
+                      icon: Icons.home_rounded,
+                      iconColor: scheme.primary,
+                      label: t.billRoomPrice,
+                      usageRate: formatUsd(roomPriceUsd),
+                      amount: formatKhr(roomPriceKhr),
+                    ),
+                  ],
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                     child: Divider(
@@ -203,7 +219,7 @@ class ReadingDetailPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            formatKhr(bill.totalKhr),
+                            formatKhr(grandTotalKhr),
                             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: scheme.primary,
@@ -211,7 +227,7 @@ class ReadingDetailPage extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            formatUsd(bill.totalUsd),
+                            formatUsd(grandTotalUsd),
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: scheme.onSurfaceVariant,
                             ),

@@ -477,7 +477,17 @@ class _InputUsagePageState extends State<InputUsagePage> {
               validateCurr: _validateMeterCurr,
             ),
             const SizedBox(height: AppSpacing.lg),
-            _PreviewCard(bill: bill, t: t, s: s),
+            _PreviewCard(
+              bill: bill,
+              t: t,
+              s: s,
+              roomPriceUsd: s.rooms
+                  .firstWhere(
+                    (r) => r.id == _roomId,
+                    orElse: () => s.rooms.first,
+                  )
+                  .priceUsd,
+            ),
             if (_showEstimate) ...[
               const SizedBox(height: AppSpacing.lg),
               _EstimateCard(
@@ -1018,16 +1028,25 @@ class _DaysSpanIndicator extends StatelessWidget {
 }
 
 class _PreviewCard extends StatelessWidget {
-  const _PreviewCard({required this.bill, required this.t, required this.s});
+  const _PreviewCard({
+    required this.bill,
+    required this.t,
+    required this.s,
+    required this.roomPriceUsd,
+  });
 
   final BillBreakdown bill;
   final AppLocalizations t;
   final AppSettings s;
+  final double roomPriceUsd;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final billColors = Theme.of(context).extension<BillColors>()!;
+    final roomPriceKhr = roomPriceUsd * s.khrPerUsd;
+    final grandTotalKhr = bill.totalKhr + roomPriceKhr;
+    final grandTotalUsd = s.khrPerUsd > 0 ? grandTotalKhr / s.khrPerUsd : 0.0;
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -1078,6 +1097,15 @@ class _PreviewCard extends StatelessWidget {
               rate: '${formatInt(s.waterRateKhrPerM3)} ៛/${t.unitM3}',
               amount: formatKhr(bill.waterAmountKhr),
             ),
+            if (roomPriceUsd > 0) ...[
+              const SizedBox(height: AppSpacing.sm),
+              _roomPriceRow(
+                context,
+                label: t.billRoomPrice,
+                priceUsd: roomPriceUsd,
+                amount: formatKhr(roomPriceKhr),
+              ),
+            ],
             Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Divider(
@@ -1098,7 +1126,7 @@ class _PreviewCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      formatKhr(bill.totalKhr),
+                      formatKhr(grandTotalKhr),
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
                             fontWeight: FontWeight.w800,
@@ -1107,7 +1135,7 @@ class _PreviewCard extends StatelessWidget {
                           ),
                     ),
                     Text(
-                      formatUsd(bill.totalUsd),
+                      formatUsd(grandTotalUsd),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
@@ -1150,6 +1178,48 @@ class _PreviewCard extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 '$usage • $rate',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Text(
+          amount,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _roomPriceRow(
+    BuildContext context, {
+    required String label,
+    required double priceUsd,
+    required String amount,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.home_rounded, size: 18, color: scheme.primary),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                formatUsd(priceUsd),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),

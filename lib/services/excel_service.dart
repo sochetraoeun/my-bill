@@ -27,6 +27,7 @@ class _ExcelLabels {
   final String usageM3;
   final String elecKhr;
   final String waterKhr;
+  final String roomPriceKhr;
   final String totalKhr;
   final String totalUsd;
   final String rateElec;
@@ -49,6 +50,7 @@ class _ExcelLabels {
     required this.usageM3,
     required this.elecKhr,
     required this.waterKhr,
+    required this.roomPriceKhr,
     required this.totalKhr,
     required this.totalUsd,
     required this.rateElec,
@@ -74,6 +76,7 @@ class _ExcelLabels {
         usageM3: 'ប្រើទឹក (m³)',
         elecKhr: 'ថ្លៃអគ្គិសនី (៛)',
         waterKhr: 'ថ្លៃទឹក (៛)',
+        roomPriceKhr: 'តម្លៃបន្ទប់ (៛)',
         totalKhr: 'សរុប (៛)',
         totalUsd: 'សរុប (\$)',
         rateElec: 'តម្លៃអគ្គិសនី (៛/kWh)',
@@ -97,6 +100,7 @@ class _ExcelLabels {
       usageM3: 'Usage m³',
       elecKhr: 'Electricity KHR',
       waterKhr: 'Water KHR',
+      roomPriceKhr: 'Room Price KHR',
       totalKhr: 'Total KHR',
       totalUsd: 'Total USD',
       rateElec: 'Elec Rate (KHR/kWh)',
@@ -129,6 +133,7 @@ class ExcelService {
       _writeRoomSheet(
         excel[_safeSheetName(room.name, room.id)],
         list,
+        room.priceUsd,
         settings,
         localeCode,
         labels,
@@ -172,6 +177,7 @@ class ExcelService {
       TextCellValue(labels.currM3),
       TextCellValue(labels.usageM3),
       TextCellValue(labels.waterKhr),
+      TextCellValue(labels.roomPriceKhr),
       TextCellValue(labels.totalKhr),
       TextCellValue(labels.totalUsd),
       TextCellValue(labels.rateElec),
@@ -187,6 +193,9 @@ class ExcelService {
 
     for (final r in sorted) {
       final b = computeBill(r, s);
+      final roomPriceKhr = (byId[r.roomId]?.priceUsd ?? 0) * s.khrPerUsd;
+      final grandTotalKhr = b.totalKhr + roomPriceKhr;
+      final grandTotalUsd = s.khrPerUsd > 0 ? grandTotalKhr / s.khrPerUsd : 0.0;
       final daysSpan = (r.prevElecDate != null && r.currElecDate != null)
           ? r.currElecDate!.difference(r.prevElecDate!).inDays
           : null;
@@ -205,8 +214,9 @@ class ExcelService {
         DoubleCellValue(r.currWater),
         DoubleCellValue(b.waterUsageM3),
         DoubleCellValue(b.waterAmountKhr),
-        DoubleCellValue(b.totalKhr),
-        DoubleCellValue(b.totalUsd),
+        DoubleCellValue(roomPriceKhr),
+        DoubleCellValue(grandTotalKhr),
+        DoubleCellValue(grandTotalUsd),
         DoubleCellValue(s.elecRateKhrPerKwh),
         DoubleCellValue(s.waterRateKhrPerM3),
       ]);
@@ -216,6 +226,7 @@ class ExcelService {
   void _writeRoomSheet(
     Sheet sheet,
     List<Reading> readings,
+    double roomPriceUsd,
     AppSettings s,
     String localeCode,
     _ExcelLabels labels,
@@ -234,11 +245,15 @@ class ExcelService {
       TextCellValue(labels.currM3),
       TextCellValue(labels.usageM3),
       TextCellValue(labels.waterKhr),
+      TextCellValue(labels.roomPriceKhr),
       TextCellValue(labels.totalKhr),
       TextCellValue(labels.totalUsd),
     ]);
+    final roomPriceKhr = roomPriceUsd * s.khrPerUsd;
     for (final r in readings) {
       final b = computeBill(r, s);
+      final grandTotalKhr = b.totalKhr + roomPriceKhr;
+      final grandTotalUsd = s.khrPerUsd > 0 ? grandTotalKhr / s.khrPerUsd : 0.0;
       final daysSpan = (r.prevElecDate != null && r.currElecDate != null)
           ? r.currElecDate!.difference(r.prevElecDate!).inDays
           : null;
@@ -256,8 +271,9 @@ class ExcelService {
         DoubleCellValue(r.currWater),
         DoubleCellValue(b.waterUsageM3),
         DoubleCellValue(b.waterAmountKhr),
-        DoubleCellValue(b.totalKhr),
-        DoubleCellValue(b.totalUsd),
+        DoubleCellValue(roomPriceKhr),
+        DoubleCellValue(grandTotalKhr),
+        DoubleCellValue(grandTotalUsd),
       ]);
     }
   }

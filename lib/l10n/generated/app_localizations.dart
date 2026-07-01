@@ -302,6 +302,12 @@ abstract class AppLocalizations {
   /// **'Bill Preview'**
   String get previewBill;
 
+  /// No description provided for @billRoomPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Room price'**
+  String get billRoomPrice;
+
   /// No description provided for @labelUsage.
   ///
   /// In en, this message translates to:
@@ -771,6 +777,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Room names'**
   String get settingsRoomNames;
+
+  /// No description provided for @settingsRooms.
+  ///
+  /// In en, this message translates to:
+  /// **'Rooms'**
+  String get settingsRooms;
+
+  /// No description provided for @settingsRoomPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Room price (USD)'**
+  String get settingsRoomPrice;
+
+  /// No description provided for @roomPriceUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Room price updated.'**
+  String get roomPriceUpdated;
 
   /// No description provided for @addRoom.
   ///
