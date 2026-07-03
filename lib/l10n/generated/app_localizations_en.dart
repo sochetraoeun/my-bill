@@ -262,10 +262,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsRates => 'Tariff';
 
   @override
-  String get settingsRateElec => 'Electricity rate (KHR / kWh)';
+  String get settingsRateElec => 'Electricity rate (USD / kWh)';
 
   @override
-  String get settingsRateWater => 'Water rate (KHR / m³)';
+  String get settingsRateWater => 'Water rate (USD / m³)';
 
   @override
   String get settingsFx => 'Exchange rate (KHR / USD)';

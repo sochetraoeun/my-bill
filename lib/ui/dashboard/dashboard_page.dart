@@ -103,11 +103,7 @@ class DashboardPage extends StatelessWidget {
               title: t.dashboardSubtitle,
               subtitle: monthLabel,
               totalKhr: formatKhr(totals.totalKhr),
-              totalUsd: formatUsd(
-                settings.settings.khrPerUsd == 0
-                    ? 0
-                    : totals.totalKhr / settings.settings.khrPerUsd,
-              ),
+              totalUsd: formatUsd(totals.totalUsd),
               roomsReported: totals.roomsReported,
               roomsTotal: settings.settings.rooms.length,
               roomsLabel: t.statRoomsReported,
@@ -141,25 +137,21 @@ class DashboardPage extends StatelessWidget {
                 StatCard(
                   label: t.statTotalKwh,
                   value: formatKwh(totals.totalKwh),
-                  sub: '${formatKhr(totals.elecKhr)}  •  ${formatUsd(settings.settings.khrPerUsd == 0 ? 0 : totals.elecKhr / settings.settings.khrPerUsd)}',
+                  sub: '${formatUsd(totals.elecUsd)}  •  ${formatKhr(totals.elecKhr)}',
                   icon: Icons.bolt_rounded,
                   color: billColors.elec,
                 ),
                 StatCard(
                   label: t.statTotalM3,
                   value: formatM3(totals.totalM3),
-                  sub: '${formatKhr(totals.waterKhr)}  •  ${formatUsd(settings.settings.khrPerUsd == 0 ? 0 : totals.waterKhr / settings.settings.khrPerUsd)}',
+                  sub: '${formatUsd(totals.waterUsd)}  •  ${formatKhr(totals.waterKhr)}',
                   icon: Icons.water_drop_rounded,
                   color: billColors.water,
                 ),
                 StatCard(
                   label: t.statTotalBilled,
-                  value: formatKhr(totals.totalKhr),
-                  sub: formatUsd(
-                    settings.settings.khrPerUsd == 0
-                        ? 0
-                        : totals.totalKhr / settings.settings.khrPerUsd,
-                  ),
+                  value: formatUsd(totals.totalUsd),
+                  sub: formatKhr(totals.totalKhr),
                   icon: Icons.receipt_long_rounded,
                   color: Theme.of(context).colorScheme.primary,
                 ),

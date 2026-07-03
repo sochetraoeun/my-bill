@@ -117,8 +117,8 @@
 
   "settingsTitle": "Settings",
   "settingsRates": "Tariff",
-  "settingsRateElec": "Electricity rate (KHR / kWh)",
-  "settingsRateWater": "Water rate (KHR / m³)",
+  "settingsRateElec": "Electricity rate (USD / kWh)",
+  "settingsRateWater": "Water rate (USD / m³)",
   "settingsFx": "Exchange rate (KHR / USD)",
   "settingsFxCloudHint": "Synced from the server when online (updated daily). You can still type an override.",
   "settingsLanguage": "Language",

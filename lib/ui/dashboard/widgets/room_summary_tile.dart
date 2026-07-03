@@ -110,7 +110,7 @@ class RoomSummaryTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        hasData ? formatKhr(bill.totalKhr) : '—',
+                        hasData ? formatUsd(bill.totalUsd) : '—',
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
                               fontWeight: FontWeight.w800,
@@ -119,7 +119,7 @@ class RoomSummaryTile extends StatelessWidget {
                       ),
                       if (hasData)
                         Text(
-                          formatUsd(bill.totalUsd),
+                          formatKhr(bill.totalKhr),
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(color: scheme.onSurfaceVariant),
                         ),

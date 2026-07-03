@@ -541,13 +541,13 @@ abstract class AppLocalizations {
   /// No description provided for @settingsRateElec.
   ///
   /// In en, this message translates to:
-  /// **'Electricity rate (KHR / kWh)'**
+  /// **'Electricity rate (USD / kWh)'**
   String get settingsRateElec;
 
   /// No description provided for @settingsRateWater.
   ///
   /// In en, this message translates to:
-  /// **'Water rate (KHR / m³)'**
+  /// **'Water rate (USD / m³)'**
   String get settingsRateWater;
 
   /// No description provided for @settingsFx.

@@ -439,7 +439,7 @@ class _InputUsagePageState extends State<InputUsagePage> {
               currLabel: t.fieldCurrMeter,
               helperText: t.electricMeterInputHint,
               usageLabel:
-                  '${formatKwh(bill.elecUsageKwh)} • ${formatKhr(bill.elecAmountKhr)}',
+                  '${formatKwh(bill.elecUsageKwh)} • ${formatUsd(bill.elecAmountUsd)}',
               validatePrev: _validateMeterPrev,
               validateCurr: _validateMeterCurrElectric,
               prevDate: _prevDate,
@@ -472,7 +472,7 @@ class _InputUsagePageState extends State<InputUsagePage> {
               prevLabel: t.fieldPrevMeter,
               currLabel: t.fieldCurrMeter,
               usageLabel:
-                  '${formatM3(bill.waterUsageM3)} • ${formatKhr(bill.waterAmountKhr)}',
+                  '${formatM3(bill.waterUsageM3)} • ${formatUsd(bill.waterAmountUsd)}',
               validatePrev: _validateMeterPrev,
               validateCurr: _validateMeterCurr,
             ),
@@ -1045,8 +1045,8 @@ class _PreviewCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final billColors = Theme.of(context).extension<BillColors>()!;
     final roomPriceKhr = roomPriceUsd * s.khrPerUsd;
-    final grandTotalKhr = bill.totalKhr + roomPriceKhr;
-    final grandTotalUsd = s.khrPerUsd > 0 ? grandTotalKhr / s.khrPerUsd : 0.0;
+    final grandTotalUsd = bill.totalUsd + roomPriceUsd;
+    final grandTotalKhr = grandTotalUsd * s.khrPerUsd;
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -1084,8 +1084,8 @@ class _PreviewCard extends StatelessWidget {
               icon: Icons.bolt_rounded,
               iconColor: billColors.elec,
               usage: formatKwh(bill.elecUsageKwh),
-              rate: '${formatInt(s.elecRateKhrPerKwh)} ៛/${t.unitKwh}',
-              amount: formatKhr(bill.elecAmountKhr),
+              rate: '${formatUsd(s.elecRateUsdPerKwh)}/${t.unitKwh}',
+              amount: formatUsd(bill.elecAmountUsd),
             ),
             const SizedBox(height: AppSpacing.sm),
             _row(
@@ -1094,16 +1094,16 @@ class _PreviewCard extends StatelessWidget {
               icon: Icons.water_drop_rounded,
               iconColor: billColors.water,
               usage: formatM3(bill.waterUsageM3),
-              rate: '${formatInt(s.waterRateKhrPerM3)} ៛/${t.unitM3}',
-              amount: formatKhr(bill.waterAmountKhr),
+              rate: '${formatUsd(s.waterRateUsdPerM3)}/${t.unitM3}',
+              amount: formatUsd(bill.waterAmountUsd),
             ),
             if (roomPriceUsd > 0) ...[
               const SizedBox(height: AppSpacing.sm),
               _roomPriceRow(
                 context,
                 label: t.billRoomPrice,
-                priceUsd: roomPriceUsd,
-                amount: formatKhr(roomPriceKhr),
+                priceKhr: roomPriceKhr,
+                amount: formatUsd(roomPriceUsd),
               ),
             ],
             Padding(
@@ -1126,7 +1126,7 @@ class _PreviewCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      formatKhr(grandTotalKhr),
+                      formatUsd(grandTotalUsd),
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
                             fontWeight: FontWeight.w800,
@@ -1135,7 +1135,7 @@ class _PreviewCard extends StatelessWidget {
                           ),
                     ),
                     Text(
-                      formatUsd(grandTotalUsd),
+                      formatKhr(grandTotalKhr),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
@@ -1198,7 +1198,7 @@ class _PreviewCard extends StatelessWidget {
   Widget _roomPriceRow(
     BuildContext context, {
     required String label,
-    required double priceUsd,
+    required double priceKhr,
     required String amount,
   }) {
     final scheme = Theme.of(context).colorScheme;
@@ -1219,7 +1219,7 @@ class _PreviewCard extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                formatUsd(priceUsd),
+                formatKhr(priceKhr),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
@@ -1263,10 +1263,10 @@ class _EstimateCard extends StatelessWidget {
 
     final estElecKwh = bill.elecUsageKwh * factor;
     final estWaterM3 = bill.waterUsageM3 * factor;
-    final estElecKhr = estElecKwh * s.elecRateKhrPerKwh;
-    final estWaterKhr = estWaterM3 * s.waterRateKhrPerM3;
-    final estTotalKhr = estElecKhr + estWaterKhr;
-    final estTotalUsd = s.khrPerUsd > 0 ? estTotalKhr / s.khrPerUsd : 0.0;
+    final estElecUsd = estElecKwh * s.elecRateUsdPerKwh;
+    final estWaterUsd = estWaterM3 * s.waterRateUsdPerM3;
+    final estTotalUsd = estElecUsd + estWaterUsd;
+    final estTotalKhr = estTotalUsd * s.khrPerUsd;
 
     final dailyElec = bill.elecUsageKwh / actualDays;
     final dailyWater = bill.waterUsageM3 / actualDays;
@@ -1397,7 +1397,7 @@ class _EstimateCard extends StatelessWidget {
               iconColor: billColors.elec,
               label: t.sectionElectricity,
               usage: formatKwh(estElecKwh),
-              amount: formatKhr(estElecKhr),
+              amount: formatUsd(estElecUsd),
             ),
             const SizedBox(height: AppSpacing.xs),
             _estRow(
@@ -1406,7 +1406,7 @@ class _EstimateCard extends StatelessWidget {
               iconColor: billColors.water,
               label: t.sectionWater,
               usage: formatM3(estWaterM3),
-              amount: formatKhr(estWaterKhr),
+              amount: formatUsd(estWaterUsd),
             ),
 
             Padding(
@@ -1430,7 +1430,7 @@ class _EstimateCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      formatKhr(estTotalKhr),
+                      formatUsd(estTotalUsd),
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: scheme.tertiary,
@@ -1438,7 +1438,7 @@ class _EstimateCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      formatUsd(estTotalUsd),
+                      formatKhr(estTotalKhr),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),

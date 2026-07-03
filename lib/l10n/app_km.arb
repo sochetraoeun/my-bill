@@ -111,8 +111,8 @@
 
   "settingsTitle": "ការកំណត់",
   "settingsRates": "តម្លៃឯកតា",
-  "settingsRateElec": "តម្លៃអគ្គិសនី (៛ / kWh)",
-  "settingsRateWater": "តម្លៃទឹក (៛ / m³)",
+  "settingsRateElec": "តម្លៃអគ្គិសនី (\\$ / kWh)",
+  "settingsRateWater": "តម្លៃទឹក (\\$ / m³)",
   "settingsFx": "អត្រាប្តូរប្រាក់ (៛ / USD)",
   "settingsFxCloudHint": "ធ្វើសមកាល់ពីម៉ាស៊ីនមេនៅពេលអ្នកមានអ៊ីនធឺណិត (បន្ទាន់សម័យប្រចាំថ្ងៃ)។ អ្នកនៅតែអាចបញ្ចូលតម្លៃដោយដៃបាន។",
   "settingsLanguage": "ភាសា",
