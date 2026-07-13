@@ -399,7 +399,27 @@ class PdfService {
                 ),
             ],
           ),
-          pw.SizedBox(height: 6),
+          pw.SizedBox(height: 10),
+
+          // ─── SUBTOTAL SUMMARY ───
+          // Shows the calculation clearly: utilities summed in KHR, converted
+          // to dollars, then combined with the room price (already in USD).
+          pw.Container(
+            padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            child: pw.Column(
+              children: [
+                _summaryRow(
+                  '${l.electricity} + ${l.water}',
+                  '${_fmtKhr(b.totalKhr)}  =  ${_fmtUsd(utilitiesUsd)}',
+                ),
+                if (roomPriceUsd > 0) ...[
+                  pw.SizedBox(height: 4),
+                  _summaryRow(l.roomPrice, _fmtUsd(roomPriceUsd)),
+                ],
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 8),
 
           // ─── TOTAL BOX ───
           pw.Container(
