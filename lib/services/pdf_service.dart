@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:image/image.dart' as img;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -118,6 +121,13 @@ class PdfService {
   PdfService._();
   static final PdfService instance = PdfService._();
 
+  /// Print resolution for the embedded payment QR (KHQR card).
+  static const double _paymentQrDpi = 300;
+
+  /// Keeps the QR large enough to scan without dominating the invoice.
+  static const double _paymentQrMaxWidth = 250;
+  static const double _paymentQrMaxHeight = 215;
+
   pw.Font? _khmerFont;
   pw.MemoryImage? _paymentQrImage;
 
@@ -138,8 +148,25 @@ class PdfService {
   Future<pw.MemoryImage> _loadPaymentQrImage() async {
     if (_paymentQrImage != null) return _paymentQrImage!;
     final bytes = await rootBundle.load('assets/images/payment_qr.png');
-    _paymentQrImage = pw.MemoryImage(bytes.buffer.asUint8List());
+    final raw = bytes.buffer.asUint8List();
+    _paymentQrImage = pw.MemoryImage(_cropPaymentQr(raw));
     return _paymentQrImage!;
+  }
+
+  /// Crops the ABA KHQR poster to the scannable card (banner + QR), dropping the
+  /// poster header, account numbers, and footer so the code can fill the PDF.
+  Uint8List _cropPaymentQr(Uint8List bytes) {
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) return bytes;
+
+    final cropped = img.copyCrop(
+      decoded,
+      x: 118,
+      y: 300,
+      width: 488,
+      height: 430,
+    );
+    return Uint8List.fromList(img.encodeJpg(cropped, quality: 95));
   }
 
   Future<pw.Document> buildInvoice({
@@ -198,7 +225,7 @@ class PdfService {
 
     return pw.Page(
       pageFormat: PdfPageFormat.a5,
-      margin: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+      margin: const pw.EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       build: (ctx) => pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.stretch,
         children: [
@@ -213,16 +240,15 @@ class PdfService {
                     pw.Text(
                       l.invoice,
                       style: pw.TextStyle(
-                        fontSize: 24,
+                        fontSize: 18,
                         fontWeight: pw.FontWeight.bold,
                         color: PdfColors.blueGrey800,
                       ),
                     ),
-                    pw.SizedBox(height: 4),
                     pw.Text(
                       formatYearMonthHuman(r.month, locale),
                       style: const pw.TextStyle(
-                        fontSize: 12,
+                        fontSize: 10,
                         color: PdfColors.blueGrey600,
                       ),
                     ),
@@ -230,15 +256,15 @@ class PdfService {
                 ),
               ),
               pw.Container(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: pw.BoxDecoration(
                   color: PdfColors.blueGrey800,
-                  borderRadius: pw.BorderRadius.circular(8),
+                  borderRadius: pw.BorderRadius.circular(6),
                 ),
                 child: pw.Text(
                   room.name,
                   style: pw.TextStyle(
-                    fontSize: 14,
+                    fontSize: 11,
                     fontWeight: pw.FontWeight.bold,
                     color: PdfColors.white,
                   ),
@@ -246,11 +272,11 @@ class PdfService {
               ),
             ],
           ),
-          pw.SizedBox(height: 14),
+          pw.SizedBox(height: 6),
 
           // ─── BILLING PERIOD ───
           pw.Container(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: pw.BoxDecoration(
               color: PdfColors.grey100,
               borderRadius: pw.BorderRadius.circular(6),
@@ -264,18 +290,18 @@ class PdfService {
                       pw.Text(
                         l.billingPeriod,
                         style: pw.TextStyle(
-                          fontSize: 8,
+                          fontSize: 7,
                           fontWeight: pw.FontWeight.bold,
                           color: PdfColors.blueGrey600,
                           letterSpacing: 0.5,
                         ),
                       ),
-                      pw.SizedBox(height: 6),
+                      pw.SizedBox(height: 2),
                       if (hasDates)
                         pw.Text(
                           '${dateFmt.format(prevDate)}  —  ${dateFmt.format(currDate)}',
                           style: pw.TextStyle(
-                            fontSize: 11,
+                            fontSize: 9,
                             fontWeight: pw.FontWeight.bold,
                             color: PdfColors.blueGrey900,
                           ),
@@ -283,24 +309,24 @@ class PdfService {
                       else
                         pw.Text(
                           formatYearMonthHuman(r.month, locale),
-                          style: const pw.TextStyle(fontSize: 11),
+                          style: const pw.TextStyle(fontSize: 9),
                         ),
                     ],
                   ),
                 ),
                 if (daysSpan != null) ...[
                   pw.Container(
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: pw.BoxDecoration(
                       color: r.isMonthComplete
                           ? const PdfColor.fromInt(0xFFD1FAE5)
                           : const PdfColor.fromInt(0xFFFEF3C7),
-                      borderRadius: pw.BorderRadius.circular(12),
+                      borderRadius: pw.BorderRadius.circular(10),
                     ),
                     child: pw.Text(
                       '$daysSpan ${l.days} • ${r.isMonthComplete ? l.complete : l.incomplete}',
                       style: pw.TextStyle(
-                        fontSize: 8,
+                        fontSize: 7,
                         fontWeight: pw.FontWeight.bold,
                         color: r.isMonthComplete
                             ? const PdfColor.fromInt(0xFF065F46)
@@ -312,7 +338,7 @@ class PdfService {
               ],
             ),
           ),
-          pw.SizedBox(height: 14),
+          pw.SizedBox(height: 6),
 
           // ─── TABLE ───
           pw.Table(
@@ -373,34 +399,14 @@ class PdfService {
                 ),
             ],
           ),
-          pw.SizedBox(height: 10),
-
-          // ─── SUBTOTAL SUMMARY ───
-          // Shows the calculation clearly: utilities in USD (with the KHR
-          // equivalent), then combined with the room price (already in USD).
-          pw.Container(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-            child: pw.Column(
-              children: [
-                _summaryRow(
-                  '${l.electricity} + ${l.water}',
-                  '${_fmtUsd(utilitiesUsd)}  =  ${_fmtKhr(b.totalKhr)}',
-                ),
-                if (roomPriceUsd > 0) ...[
-                  pw.SizedBox(height: 4),
-                  _summaryRow(l.roomPrice, _fmtUsd(roomPriceUsd)),
-                ],
-              ],
-            ),
-          ),
-          pw.SizedBox(height: 8),
+          pw.SizedBox(height: 6),
 
           // ─── TOTAL BOX ───
           pw.Container(
-            padding: const pw.EdgeInsets.all(12),
+            padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: pw.BoxDecoration(
               color: PdfColors.blueGrey800,
-              borderRadius: pw.BorderRadius.circular(8),
+              borderRadius: pw.BorderRadius.circular(6),
             ),
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -408,7 +414,7 @@ class PdfService {
                 pw.Text(
                   l.total,
                   style: pw.TextStyle(
-                    fontSize: 14,
+                    fontSize: 12,
                     fontWeight: pw.FontWeight.bold,
                     color: PdfColors.white,
                   ),
@@ -419,16 +425,15 @@ class PdfService {
                     pw.Text(
                       _fmtUsd(grandTotalUsd),
                       style: pw.TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         fontWeight: pw.FontWeight.bold,
                         color: PdfColors.white,
                       ),
                     ),
-                    pw.SizedBox(height: 2),
                     pw.Text(
                       _fmtKhr(grandTotalKhr),
                       style: const pw.TextStyle(
-                        fontSize: 14,
+                        fontSize: 10,
                         color: PdfColors.grey400,
                       ),
                     ),
@@ -437,26 +442,30 @@ class PdfService {
               ],
             ),
           ),
-          pw.SizedBox(height: 12),
+          pw.SizedBox(height: 6),
 
-          // ─── PAYMENT CARD ───
-          // The card fills the remaining page height and the QR is sized via an
-          // AspectRatio, so it is always as large as the leftover space allows
-          // and the invoice can never overflow onto a second page.
+          // ─── PAYMENT QR ───
           pw.Expanded(
-            child: pw.Container(
-              padding: const pw.EdgeInsets.all(12),
-              decoration: pw.BoxDecoration(
-                color: PdfColors.grey100,
-                borderRadius: pw.BorderRadius.circular(10),
-                border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
-              ),
-              child: pw.Row(
-                crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-                children: [
-                  pw.AspectRatio(
-                    aspectRatio: 1,
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+              children: [
+                pw.Text(
+                  l.scanToPay,
+                  textAlign: pw.TextAlign.center,
+                  style: pw.TextStyle(
+                    fontSize: 9,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.blueGrey700,
+                  ),
+                ),
+                pw.SizedBox(height: 6),
+                pw.Expanded(
+                  child: pw.Center(
                     child: pw.Container(
+                      constraints: const pw.BoxConstraints(
+                        maxWidth: _paymentQrMaxWidth,
+                        maxHeight: _paymentQrMaxHeight,
+                      ),
                       padding: const pw.EdgeInsets.all(6),
                       decoration: pw.BoxDecoration(
                         color: PdfColors.white,
@@ -466,54 +475,15 @@ class PdfService {
                           width: 0.5,
                         ),
                       ),
-                      child: pw.Image(qrImage, fit: pw.BoxFit.contain),
+                      child: pw.Image(
+                        qrImage,
+                        fit: pw.BoxFit.contain,
+                        dpi: _paymentQrDpi,
+                      ),
                     ),
                   ),
-                  pw.SizedBox(width: 18),
-                  pw.Expanded(
-                    child: pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      mainAxisAlignment: pw.MainAxisAlignment.center,
-                      children: [
-                        pw.Text(
-                          l.scanToPay,
-                          style: pw.TextStyle(
-                            fontSize: 11,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.blueGrey800,
-                          ),
-                        ),
-                        pw.SizedBox(height: 10),
-                        pw.Text(
-                          l.amountDue,
-                          style: pw.TextStyle(
-                            fontSize: 8,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.blueGrey600,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        pw.SizedBox(height: 3),
-                        pw.Text(
-                          _fmtUsd(grandTotalUsd),
-                          style: pw.TextStyle(
-                            fontSize: 20,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.blueGrey900,
-                          ),
-                        ),
-                        pw.Text(
-                          _fmtKhr(grandTotalKhr),
-                          style: const pw.TextStyle(
-                            fontSize: 11,
-                            color: PdfColors.blueGrey500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -609,29 +579,6 @@ class PdfService {
           ),
         ],
       ),
-    );
-  }
-
-  pw.Widget _summaryRow(String label, String value) {
-    return pw.Row(
-      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-      children: [
-        pw.Text(
-          label,
-          style: const pw.TextStyle(
-            fontSize: 9,
-            color: PdfColors.blueGrey600,
-          ),
-        ),
-        pw.Text(
-          value,
-          style: pw.TextStyle(
-            fontSize: 9,
-            fontWeight: pw.FontWeight.bold,
-            color: PdfColors.blueGrey900,
-          ),
-        ),
-      ],
     );
   }
 
