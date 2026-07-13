@@ -190,11 +190,11 @@ class PdfService {
     final khrPerUsd = s.khrPerUsd;
     final roomPriceUsd = room.priceUsd;
     final roomPriceKhr = roomPriceUsd * khrPerUsd;
-    // Utilities are metered in KHR; convert them to dollars and add the room
-    // price (already in USD) so the invoice total is calculated in dollars.
-    final utilitiesUsd = khrPerUsd == 0 ? 0.0 : b.totalKhr / khrPerUsd;
+    // Tariffs are priced in USD; the KHR figures are derived via the exchange
+    // rate so the invoice total is calculated in dollars first.
+    final utilitiesUsd = b.totalUsd;
     final grandTotalUsd = utilitiesUsd + roomPriceUsd;
-    final grandTotalKhr = b.totalKhr + roomPriceKhr;
+    final grandTotalKhr = grandTotalUsd * khrPerUsd;
 
     return pw.Page(
       pageFormat: PdfPageFormat.a5,
@@ -345,11 +345,8 @@ class PdfService {
                     sub: '${l.prevMeter}: ${_num(r.prevElec)}  -  ${l.currMeter}: ${_num(r.currElec)}',
                   ),
                   _textCell('${_num(b.elecUsageKwh)} kWh', align: pw.TextAlign.center),
-                  _textCell('${formatInt(s.elecRateKhrPerKwh)} KHR', align: pw.TextAlign.right),
-                  _amountCell(
-                    b.elecAmountKhr,
-                    khrPerUsd == 0 ? 0 : b.elecAmountKhr / khrPerUsd,
-                  ),
+                  _textCell(_fmtUsd(s.elecRateUsdPerKwh), align: pw.TextAlign.right),
+                  _amountCell(b.elecAmountUsd, b.elecAmountKhr),
                 ],
               ),
               // Water row
@@ -360,11 +357,8 @@ class PdfService {
                     sub: '${l.prevMeter}: ${_num(r.prevWater)}  -  ${l.currMeter}: ${_num(r.currWater)}',
                   ),
                   _textCell('${_num(b.waterUsageM3)} m3', align: pw.TextAlign.center),
-                  _textCell('${formatInt(s.waterRateKhrPerM3)} KHR', align: pw.TextAlign.right),
-                  _amountCell(
-                    b.waterAmountKhr,
-                    khrPerUsd == 0 ? 0 : b.waterAmountKhr / khrPerUsd,
-                  ),
+                  _textCell(_fmtUsd(s.waterRateUsdPerM3), align: pw.TextAlign.right),
+                  _amountCell(b.waterAmountUsd, b.waterAmountKhr),
                 ],
               ),
               // Room price row
@@ -374,7 +368,7 @@ class PdfService {
                     _bodyCell(l.roomPrice),
                     _textCell('1', align: pw.TextAlign.center),
                     _textCell(_fmtUsd(roomPriceUsd), align: pw.TextAlign.right),
-                    _amountCell(roomPriceKhr, roomPriceUsd),
+                    _amountCell(roomPriceUsd, roomPriceKhr),
                   ],
                 ),
             ],
@@ -382,15 +376,15 @@ class PdfService {
           pw.SizedBox(height: 10),
 
           // ─── SUBTOTAL SUMMARY ───
-          // Shows the calculation clearly: utilities summed in KHR, converted
-          // to dollars, then combined with the room price (already in USD).
+          // Shows the calculation clearly: utilities in USD (with the KHR
+          // equivalent), then combined with the room price (already in USD).
           pw.Container(
             padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 4),
             child: pw.Column(
               children: [
                 _summaryRow(
                   '${l.electricity} + ${l.water}',
-                  '${_fmtKhr(b.totalKhr)}  =  ${_fmtUsd(utilitiesUsd)}',
+                  '${_fmtUsd(utilitiesUsd)}  =  ${_fmtKhr(b.totalKhr)}',
                 ),
                 if (roomPriceUsd > 0) ...[
                   pw.SizedBox(height: 4),
@@ -589,14 +583,14 @@ class PdfService {
     );
   }
 
-  pw.Widget _amountCell(num khr, num usd) {
+  pw.Widget _amountCell(num usd, num khr) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 9),
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.end,
         children: [
           pw.Text(
-            _fmtKhr(khr),
+            _fmtUsd(usd),
             textAlign: pw.TextAlign.right,
             style: pw.TextStyle(
               fontSize: 9,
@@ -606,7 +600,7 @@ class PdfService {
           ),
           pw.SizedBox(height: 1),
           pw.Text(
-            _fmtUsd(usd),
+            _fmtKhr(khr),
             textAlign: pw.TextAlign.right,
             style: const pw.TextStyle(
               fontSize: 8,

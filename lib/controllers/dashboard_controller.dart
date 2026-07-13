@@ -10,9 +10,12 @@ import 'settings_controller.dart';
 class MonthlyTotals {
   final String key;
   final DateTime month;
+  final double totalUsd;
   final double totalKhr;
   final double totalKwh;
   final double totalM3;
+  final double elecUsd;
+  final double waterUsd;
   final double elecKhr;
   final double waterKhr;
   final int roomsReported;
@@ -20,9 +23,12 @@ class MonthlyTotals {
   const MonthlyTotals({
     required this.key,
     required this.month,
+    required this.totalUsd,
     required this.totalKhr,
     required this.totalKwh,
     required this.totalM3,
+    required this.elecUsd,
+    required this.waterUsd,
     required this.elecKhr,
     required this.waterKhr,
     required this.roomsReported,
@@ -56,23 +62,27 @@ class DashboardController extends GetxController {
   MonthlyTotals totalsFor(String yearMonth) {
     final list = readingsController.forMonthKey(yearMonth);
     final s = settingsController.settings;
-    double khr = 0, kwh = 0, m3 = 0, eKhr = 0, wKhr = 0;
+    double usd = 0, kwh = 0, m3 = 0, eUsd = 0, wUsd = 0;
     for (final r in list) {
       final b = computeBill(r, s);
-      khr += b.totalKhr;
+      usd += b.totalUsd;
       kwh += b.elecUsageKwh;
       m3 += b.waterUsageM3;
-      eKhr += b.elecAmountKhr;
-      wKhr += b.waterAmountKhr;
+      eUsd += b.elecAmountUsd;
+      wUsd += b.waterAmountUsd;
     }
+    final khrPerUsd = s.khrPerUsd;
     return MonthlyTotals(
       key: yearMonth,
       month: parseYearMonthKey(yearMonth),
-      totalKhr: khr,
+      totalUsd: usd,
+      totalKhr: usd * khrPerUsd,
       totalKwh: kwh,
       totalM3: m3,
-      elecKhr: eKhr,
-      waterKhr: wKhr,
+      elecUsd: eUsd,
+      waterUsd: wUsd,
+      elecKhr: eUsd * khrPerUsd,
+      waterKhr: wUsd * khrPerUsd,
       roomsReported: list.length,
     );
   }
@@ -107,8 +117,8 @@ class DashboardController extends GetxController {
               BillBreakdown(
                 elecUsageKwh: 0,
                 waterUsageM3: 0,
-                elecRateKhr: s.elecRateKhrPerKwh,
-                waterRateKhr: s.waterRateKhrPerM3,
+                elecRateUsd: s.elecRateUsdPerKwh,
+                waterRateUsd: s.waterRateUsdPerM3,
                 khrPerUsd: s.khrPerUsd,
               ),
         ),

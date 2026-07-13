@@ -261,10 +261,10 @@ class AppLocalizationsKm extends AppLocalizations {
   String get settingsRates => 'តម្លៃឯកតា';
 
   @override
-  String get settingsRateElec => 'តម្លៃអគ្គិសនី (៛ / kWh)';
+  String get settingsRateElec => 'តម្លៃអគ្គិសនី (\\\$ / kWh)';
 
   @override
-  String get settingsRateWater => 'តម្លៃទឹក (៛ / m³)';
+  String get settingsRateWater => 'តម្លៃទឹក (\\\$ / m³)';
 
   @override
   String get settingsFx => 'អត្រាប្តូរប្រាក់ (៛ / USD)';

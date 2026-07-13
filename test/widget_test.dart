@@ -5,7 +5,7 @@ import 'package:my_bill/models/settings.dart';
 import 'package:my_bill/services/bill_calculator.dart';
 
 void main() {
-  test('computeBill multiplies usage by rates', () {
+  test('computeBill multiplies usage by USD rates and derives KHR', () {
     final r = Reading(
       id: 'r1',
       roomId: 'room_1',
@@ -21,10 +21,10 @@ void main() {
 
     expect(b.elecUsageKwh, 100);
     expect(b.waterUsageM3, 5);
-    expect(b.elecAmountKhr, 100 * s.elecRateKhrPerKwh);
-    expect(b.waterAmountKhr, 5 * s.waterRateKhrPerM3);
-    expect(b.totalKhr, b.elecAmountKhr + b.waterAmountKhr);
-    expect(b.totalUsd, b.totalKhr / s.khrPerUsd);
+    expect(b.elecAmountUsd, 100 * s.elecRateUsdPerKwh);
+    expect(b.waterAmountUsd, 5 * s.waterRateUsdPerM3);
+    expect(b.totalUsd, b.elecAmountUsd + b.waterAmountUsd);
+    expect(b.totalKhr, b.totalUsd * s.khrPerUsd);
   });
 
   test('computeBill clamps negative usage to zero', () {

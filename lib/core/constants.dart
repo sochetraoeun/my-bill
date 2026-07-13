@@ -14,8 +14,9 @@ const String kFirestoreExchangeRateCollection = 'settings';
 const String kFirestoreExchangeRateDocId = 'exchange_rate';
 
 class Defaults {
-  static const double elecRateKhrPerKwh = 800;
-  static const double waterRateKhrPerM3 = 2000;
+  /// Tariffs are entered and stored in USD; KHR is derived via [khrPerUsd].
+  static const double elecRateUsdPerKwh = 0.20;
+  static const double waterRateUsdPerM3 = 0.50;
   static const double khrPerUsd = 4100;
   static const String localeCode = 'en';
   static const ThemeMode themeMode = ThemeMode.system;

@@ -25,11 +25,11 @@ class _ExcelLabels {
   final String prevM3;
   final String currM3;
   final String usageM3;
-  final String elecKhr;
-  final String waterKhr;
-  final String roomPriceKhr;
-  final String totalKhr;
+  final String elecUsd;
+  final String waterUsd;
+  final String roomPriceUsd;
   final String totalUsd;
+  final String totalKhr;
   final String rateElec;
   final String rateWater;
   final String complete;
@@ -48,11 +48,11 @@ class _ExcelLabels {
     required this.prevM3,
     required this.currM3,
     required this.usageM3,
-    required this.elecKhr,
-    required this.waterKhr,
-    required this.roomPriceKhr,
-    required this.totalKhr,
+    required this.elecUsd,
+    required this.waterUsd,
+    required this.roomPriceUsd,
     required this.totalUsd,
+    required this.totalKhr,
     required this.rateElec,
     required this.rateWater,
     required this.complete,
@@ -74,13 +74,13 @@ class _ExcelLabels {
         prevM3: 'ម៉ែត្រទឹកមុន',
         currM3: 'ម៉ែត្រទឹកថ្មី',
         usageM3: 'ប្រើទឹក (m³)',
-        elecKhr: 'ថ្លៃអគ្គិសនី (៛)',
-        waterKhr: 'ថ្លៃទឹក (៛)',
-        roomPriceKhr: 'តម្លៃបន្ទប់ (៛)',
-        totalKhr: 'សរុប (៛)',
+        elecUsd: 'ថ្លៃអគ្គិសនី (\$)',
+        waterUsd: 'ថ្លៃទឹក (\$)',
+        roomPriceUsd: 'តម្លៃបន្ទប់ (\$)',
         totalUsd: 'សរុប (\$)',
-        rateElec: 'តម្លៃអគ្គិសនី (៛/kWh)',
-        rateWater: 'តម្លៃទឹក (៛/m³)',
+        totalKhr: 'សរុប (៛)',
+        rateElec: 'តម្លៃអគ្គិសនី (\$/kWh)',
+        rateWater: 'តម្លៃទឹក (\$/m³)',
         complete: 'គ្រប់មួយខែ',
         incomplete: 'មិនទាន់គ្រប់មួយខែ',
       );
@@ -98,13 +98,13 @@ class _ExcelLabels {
       prevM3: 'Prev m³',
       currM3: 'Curr m³',
       usageM3: 'Usage m³',
-      elecKhr: 'Electricity KHR',
-      waterKhr: 'Water KHR',
-      roomPriceKhr: 'Room Price KHR',
-      totalKhr: 'Total KHR',
+      elecUsd: 'Electricity USD',
+      waterUsd: 'Water USD',
+      roomPriceUsd: 'Room Price USD',
       totalUsd: 'Total USD',
-      rateElec: 'Elec Rate (KHR/kWh)',
-      rateWater: 'Water Rate (KHR/m³)',
+      totalKhr: 'Total KHR',
+      rateElec: 'Elec Rate (USD/kWh)',
+      rateWater: 'Water Rate (USD/m³)',
       complete: 'Complete',
       incomplete: 'Incomplete',
     );
@@ -172,14 +172,14 @@ class ExcelService {
       TextCellValue(labels.prevKwh),
       TextCellValue(labels.currKwh),
       TextCellValue(labels.usageKwh),
-      TextCellValue(labels.elecKhr),
+      TextCellValue(labels.elecUsd),
       TextCellValue(labels.prevM3),
       TextCellValue(labels.currM3),
       TextCellValue(labels.usageM3),
-      TextCellValue(labels.waterKhr),
-      TextCellValue(labels.roomPriceKhr),
-      TextCellValue(labels.totalKhr),
+      TextCellValue(labels.waterUsd),
+      TextCellValue(labels.roomPriceUsd),
       TextCellValue(labels.totalUsd),
+      TextCellValue(labels.totalKhr),
       TextCellValue(labels.rateElec),
       TextCellValue(labels.rateWater),
     ]);
@@ -193,9 +193,9 @@ class ExcelService {
 
     for (final r in sorted) {
       final b = computeBill(r, s);
-      final roomPriceKhr = (byId[r.roomId]?.priceUsd ?? 0) * s.khrPerUsd;
-      final grandTotalKhr = b.totalKhr + roomPriceKhr;
-      final grandTotalUsd = s.khrPerUsd > 0 ? grandTotalKhr / s.khrPerUsd : 0.0;
+      final roomPriceUsd = byId[r.roomId]?.priceUsd ?? 0;
+      final grandTotalUsd = b.totalUsd + roomPriceUsd;
+      final grandTotalKhr = grandTotalUsd * s.khrPerUsd;
       final daysSpan = (r.prevElecDate != null && r.currElecDate != null)
           ? r.currElecDate!.difference(r.prevElecDate!).inDays
           : null;
@@ -209,16 +209,16 @@ class ExcelService {
         DoubleCellValue(r.prevElec),
         DoubleCellValue(r.currElec),
         DoubleCellValue(b.elecUsageKwh),
-        DoubleCellValue(b.elecAmountKhr),
+        DoubleCellValue(b.elecAmountUsd),
         DoubleCellValue(r.prevWater),
         DoubleCellValue(r.currWater),
         DoubleCellValue(b.waterUsageM3),
-        DoubleCellValue(b.waterAmountKhr),
-        DoubleCellValue(roomPriceKhr),
-        DoubleCellValue(grandTotalKhr),
+        DoubleCellValue(b.waterAmountUsd),
+        DoubleCellValue(roomPriceUsd),
         DoubleCellValue(grandTotalUsd),
-        DoubleCellValue(s.elecRateKhrPerKwh),
-        DoubleCellValue(s.waterRateKhrPerM3),
+        DoubleCellValue(grandTotalKhr),
+        DoubleCellValue(s.elecRateUsdPerKwh),
+        DoubleCellValue(s.waterRateUsdPerM3),
       ]);
     }
   }
@@ -240,20 +240,19 @@ class ExcelService {
       TextCellValue(labels.prevKwh),
       TextCellValue(labels.currKwh),
       TextCellValue(labels.usageKwh),
-      TextCellValue(labels.elecKhr),
+      TextCellValue(labels.elecUsd),
       TextCellValue(labels.prevM3),
       TextCellValue(labels.currM3),
       TextCellValue(labels.usageM3),
-      TextCellValue(labels.waterKhr),
-      TextCellValue(labels.roomPriceKhr),
-      TextCellValue(labels.totalKhr),
+      TextCellValue(labels.waterUsd),
+      TextCellValue(labels.roomPriceUsd),
       TextCellValue(labels.totalUsd),
+      TextCellValue(labels.totalKhr),
     ]);
-    final roomPriceKhr = roomPriceUsd * s.khrPerUsd;
     for (final r in readings) {
       final b = computeBill(r, s);
-      final grandTotalKhr = b.totalKhr + roomPriceKhr;
-      final grandTotalUsd = s.khrPerUsd > 0 ? grandTotalKhr / s.khrPerUsd : 0.0;
+      final grandTotalUsd = b.totalUsd + roomPriceUsd;
+      final grandTotalKhr = grandTotalUsd * s.khrPerUsd;
       final daysSpan = (r.prevElecDate != null && r.currElecDate != null)
           ? r.currElecDate!.difference(r.prevElecDate!).inDays
           : null;
@@ -266,14 +265,14 @@ class ExcelService {
         DoubleCellValue(r.prevElec),
         DoubleCellValue(r.currElec),
         DoubleCellValue(b.elecUsageKwh),
-        DoubleCellValue(b.elecAmountKhr),
+        DoubleCellValue(b.elecAmountUsd),
         DoubleCellValue(r.prevWater),
         DoubleCellValue(r.currWater),
         DoubleCellValue(b.waterUsageM3),
-        DoubleCellValue(b.waterAmountKhr),
-        DoubleCellValue(roomPriceKhr),
-        DoubleCellValue(grandTotalKhr),
+        DoubleCellValue(b.waterAmountUsd),
+        DoubleCellValue(roomPriceUsd),
         DoubleCellValue(grandTotalUsd),
+        DoubleCellValue(grandTotalKhr),
       ]);
     }
   }

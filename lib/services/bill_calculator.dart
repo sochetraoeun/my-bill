@@ -5,8 +5,8 @@ import '../models/settings.dart';
 BillBreakdown computeBill(Reading r, AppSettings s) => BillBreakdown(
   elecUsageKwh: r.elecUsage,
   waterUsageM3: r.waterUsage,
-  elecRateKhr: s.elecRateKhrPerKwh,
-  waterRateKhr: s.waterRateKhrPerM3,
+  elecRateUsd: s.elecRateUsdPerKwh,
+  waterRateUsd: s.waterRateUsdPerM3,
   khrPerUsd: s.khrPerUsd,
 );
 
@@ -19,7 +19,7 @@ BillBreakdown computeBillFromValues({
 }) => BillBreakdown(
   elecUsageKwh: (currElec - prevElec).clamp(0, double.infinity),
   waterUsageM3: (currWater - prevWater).clamp(0, double.infinity),
-  elecRateKhr: s.elecRateKhrPerKwh,
-  waterRateKhr: s.waterRateKhrPerM3,
+  elecRateUsd: s.elecRateUsdPerKwh,
+  waterRateUsd: s.waterRateUsdPerM3,
   khrPerUsd: s.khrPerUsd,
 );

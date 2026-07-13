@@ -65,12 +65,14 @@ class SettingsPage extends StatelessWidget {
             _SettingsCard(
               children: [
                 _RateField(
-                  initialValue: s.elecRateKhrPerKwh,
+                  key: ValueKey<double>(s.elecRateUsdPerKwh),
+                  initialValue: s.elecRateUsdPerKwh,
                   label: t.settingsRateElec,
+                  prefixText: r'$ ',
                   icon: Icons.bolt,
                   iconColor: Theme.of(context).extension<BillColors>()!.elec,
                   onChanged: (v) async {
-                    if (v == s.elecRateKhrPerKwh) return;
+                    if (v == s.elecRateUsdPerKwh) return;
                     await settings.updateRates(elec: v);
                     if (!context.mounted) return;
                     AppSnack.success(context, t.ratesUpdated);
@@ -78,12 +80,14 @@ class SettingsPage extends StatelessWidget {
                 ),
                 const _ThinDivider(),
                 _RateField(
-                  initialValue: s.waterRateKhrPerM3,
+                  key: ValueKey<double>(s.waterRateUsdPerM3),
+                  initialValue: s.waterRateUsdPerM3,
                   label: t.settingsRateWater,
+                  prefixText: r'$ ',
                   icon: Icons.water_drop,
                   iconColor: Theme.of(context).extension<BillColors>()!.water,
                   onChanged: (v) async {
-                    if (v == s.waterRateKhrPerM3) return;
+                    if (v == s.waterRateUsdPerM3) return;
                     await settings.updateRates(water: v);
                     if (!context.mounted) return;
                     AppSnack.success(context, t.ratesUpdated);
@@ -636,11 +640,13 @@ class _RateField extends StatefulWidget {
     required this.iconColor,
     required this.onChanged,
     this.helperText,
+    this.prefixText,
   });
 
   final double initialValue;
   final String label;
   final String? helperText;
+  final String? prefixText;
   final IconData icon;
   final Color iconColor;
   final Future<void> Function(double) onChanged;
@@ -720,6 +726,7 @@ class _RateFieldState extends State<_RateField> {
             decoration: InputDecoration(
               labelText: widget.label,
               helperText: widget.helperText,
+              prefixText: widget.prefixText,
               filled: false,
               border: InputBorder.none,
               enabledBorder: InputBorder.none,

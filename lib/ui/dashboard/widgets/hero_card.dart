@@ -111,7 +111,7 @@ class HeroCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
-                  totalKhr,
+                  totalUsd,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
@@ -120,7 +120,7 @@ class HeroCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  totalUsd,
+                  totalKhr,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: Colors.white.withValues(alpha: 0.85),
                     fontWeight: FontWeight.w500,

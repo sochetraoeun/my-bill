@@ -56,8 +56,8 @@ class SettingsController extends GetxController {
     double? khrPerUsd,
   }) async {
     _settings.value = _settings.value.copyWith(
-      elecRateKhrPerKwh: elec,
-      waterRateKhrPerM3: water,
+      elecRateUsdPerKwh: elec,
+      waterRateUsdPerM3: water,
       khrPerUsd: khrPerUsd,
     );
     await _service.save(_settings.value);

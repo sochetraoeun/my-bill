@@ -29,8 +29,8 @@ class ReadingDetailPage extends StatelessWidget {
     final roomName = room.name;
     final roomPriceUsd = room.priceUsd;
     final roomPriceKhr = roomPriceUsd * s.khrPerUsd;
-    final grandTotalKhr = bill.totalKhr + roomPriceKhr;
-    final grandTotalUsd = s.khrPerUsd > 0 ? grandTotalKhr / s.khrPerUsd : 0.0;
+    final grandTotalUsd = bill.totalUsd + roomPriceUsd;
+    final grandTotalKhr = grandTotalUsd * s.khrPerUsd;
 
     return Scaffold(
       appBar: AppBar(
@@ -175,8 +175,8 @@ class ReadingDetailPage extends StatelessWidget {
                     iconColor: billColors.elec,
                     label: t.sectionElectricity,
                     usageRate:
-                        '${formatKwh(bill.elecUsageKwh)} • ${formatInt(s.elecRateKhrPerKwh)} ៛/${t.unitKwh}',
-                    amount: formatKhr(bill.elecAmountKhr),
+                        '${formatKwh(bill.elecUsageKwh)} • ${formatUsd(s.elecRateUsdPerKwh)}/${t.unitKwh}',
+                    amount: formatUsd(bill.elecAmountUsd),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   _billBreakdownRow(
@@ -185,8 +185,8 @@ class ReadingDetailPage extends StatelessWidget {
                     iconColor: billColors.water,
                     label: t.sectionWater,
                     usageRate:
-                        '${formatM3(bill.waterUsageM3)} • ${formatInt(s.waterRateKhrPerM3)} ៛/${t.unitM3}',
-                    amount: formatKhr(bill.waterAmountKhr),
+                        '${formatM3(bill.waterUsageM3)} • ${formatUsd(s.waterRateUsdPerM3)}/${t.unitM3}',
+                    amount: formatUsd(bill.waterAmountUsd),
                   ),
                   if (roomPriceUsd > 0) ...[
                     const SizedBox(height: AppSpacing.sm),
@@ -195,8 +195,8 @@ class ReadingDetailPage extends StatelessWidget {
                       icon: Icons.home_rounded,
                       iconColor: scheme.primary,
                       label: t.billRoomPrice,
-                      usageRate: formatUsd(roomPriceUsd),
-                      amount: formatKhr(roomPriceKhr),
+                      usageRate: formatKhr(roomPriceKhr),
+                      amount: formatUsd(roomPriceUsd),
                     ),
                   ],
                   Padding(
@@ -219,7 +219,7 @@ class ReadingDetailPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            formatKhr(grandTotalKhr),
+                            formatUsd(grandTotalUsd),
                             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: scheme.primary,
@@ -227,7 +227,7 @@ class ReadingDetailPage extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            formatUsd(grandTotalUsd),
+                            formatKhr(grandTotalKhr),
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: scheme.onSurfaceVariant,
                             ),
