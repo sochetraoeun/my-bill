@@ -602,6 +602,29 @@ class PdfService {
     );
   }
 
+  pw.Widget _summaryRow(String label, String value) {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      children: [
+        pw.Text(
+          label,
+          style: const pw.TextStyle(
+            fontSize: 9,
+            color: PdfColors.blueGrey600,
+          ),
+        ),
+        pw.Text(
+          value,
+          style: pw.TextStyle(
+            fontSize: 9,
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.blueGrey900,
+          ),
+        ),
+      ],
+    );
+  }
+
   String _num(double v) =>
       v == v.roundToDouble() ? formatInt(v) : v.toStringAsFixed(1);
 
